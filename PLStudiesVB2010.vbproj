@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4BD71D9B-76F8-4990-BF1B-4372708E3EFF}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PLStudiesVB2010</RootNamespace>
+    <AssemblyName>PLStudiesVB2010</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing.dll" />
+    <Reference Include="System.Windows.Forms.dll" />
+    <Reference Include="System.dll" />
+    <Reference Include="System.Data.dll" />
+    <Reference Include="System.Xml.dll" />
+    <Reference Include="System.Core.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLTypes.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLStudiesProxy.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLBuiltInFunctions.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLTradeManager.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\ATCenterProxy.interop.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLDataLoader.dll" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Compile Include="vb_TrendLines_Automatic.Indicator.VB" />
+    <Compile Include="vb_Bid_And_Ask_Vol_Ratio.Indicator.VB" />
+    <Compile Include="vb_MouseEventsExample.Indicator.VB" />
+    <Compile Include="vb_New_Low_for_Chart.Indicator.VB" />
+    <Compile Include="vb_Chaos_Awesome_Oscillator.Indicator.VB" />
+    <Compile Include="vb_Pivot_Low.Indicator.VB" />
+    <Compile Include="vb_Avg_Close_Greater_Avg_Open.Indicator.VB" />
+    <Compile Include="vb_Day_of_Week.Indicator.VB" />
+    <Compile Include="vb_Gapless_Bar_Chart.Indicator.VB" />
+    <Compile Include="vb_New_High_for_Day.Indicator.VB" />
+    <Compile Include="vb_Key_Reversal_Dn.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Crossover.Indicator.VB" />
+    <Compile Include="vb__Market_Depth_on_Chart_.Indicator.VB" />
+    <Compile Include="vb_Accum_Swing_Index.Indicator.VB" />
+    <Compile Include="vb_AdvanceDecl_Line.Indicator.VB" />
+    <Compile Include="vb_Percent_Increase.Indicator.VB" />
+    <Compile Include="vb_Parabolic_SAR.Indicator.VB" />
+    <Compile Include="vb_New_Low_for_Week.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_3_Lines.Indicator.VB" />
+    <Compile Include="vb_Accum_Dist__BuyPr.Indicator.VB" />
+    <Compile Include="vb_Chaos_Fractals.Indicator.VB" />
+    <Compile Include="vb_Custom_ShowMe.Indicator.VB" />
+    <Compile Include="vb_Comm_Sel_Index.Indicator.VB" />
+    <Compile Include="vb_OHLC_Yesterday.Indicator.VB" />
+    <Compile Include="vb_Accum_Dist__PrVol.Indicator.VB" />
+    <Compile Include="vb_Pivot_High.Indicator.VB" />
+    <Compile Include="vb_Avg_Close_Less_Avg_Open.Indicator.VB" />
+    <Compile Include="vb_New_NDay_HiLo.Indicator.VB" />
+    <Compile Include="vb_First_Bar_of_Month.Indicator.VB" />
+    <Compile Include="vb_Stochastic_SlowK.Indicator.VB" />
+    <Compile Include="vb_Linear_Reg_Line.Indicator.VB" />
+    <Compile Include="vb_Price_Less_Avg.Indicator.VB" />
+    <Compile Include="vb_Volume_Brkout.Indicator.VB" />
+    <Compile Include="vb_Day_OpenHiLo_Lines.Indicator.VB" />
+    <Compile Include="vb_ZigZag_Pnts.Indicator.VB" />
+    <Compile Include="vb_ZigZag_Percent.Indicator.VB" />
+    <Compile Include="vb_AdvanceDecl_Ratio.Indicator.VB" />
+    <Compile Include="vb_Next_3rd_Friday.Indicator.VB" />
+    <Compile Include="vb_Gap_Up_Bar.Indicator.VB" />
+    <Compile Include="vb_C_3WhSolds_3BlkCrows.Indicator.VB" />
+    <Compile Include="vb_Block_Trades_per_Bar.Indicator.VB" />
+    <Compile Include="vb_Volume_Up.Indicator.VB" />
+    <Compile Include="vb_Floor_Trader_Pivots.Indicator.VB" />
+    <Compile Include="vb_Crossunders_per_Bar.Indicator.VB" />
+    <Compile Include="vb_Momentum.Indicator.VB" />
+    <Compile Include="vb_Volume_Rate_of_Chg.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Envelopes.Indicator.VB" />
+    <Compile Include="vb_Spread__Diff.Indicator.VB" />
+    <Compile Include="vb_ADXR.Indicator.VB" />
+    <Compile Include="vb_Formula_OHLC.Indicator.VB" />
+    <Compile Include="vb_Average_True_Range.Indicator.VB" />
+    <Compile Include="vb_PercentR.Indicator.VB" />
+    <Compile Include="vb_New_Low_for_Month.Indicator.VB" />
+    <Compile Include="vb_Volume_Avg.Indicator.VB" />
+    <Compile Include="vb_Swing_Index.Indicator.VB" />
+    <Compile Include="vb_Chaos_Alligator.Indicator.VB" />
+    <Compile Include="vb_C_ShootingStar.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_2_Lines.Indicator.VB" />
+    <Compile Include="vb_RSI.Indicator.VB" />
+    <Compile Include="vb_Price_Channel.Indicator.VB" />
+    <Compile Include="vb_Mass_Index.Indicator.VB" />
+    <Compile Include="vb_Typical_Price.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Weighted.Indicator.VB" />
+    <Compile Include="vb_Ease_of_Movement.Indicator.VB" />
+    <Compile Include="vb_Open_Interest.Indicator.VB" />
+    <Compile Include="vb_New_Intraday_HiLo.Indicator.VB" />
+    <Compile Include="vb__Market_Depth_on_Chart_2_.Indicator.VB" />
+    <Compile Include="vb_MACD_Gradient.Indicator.VB" />
+    <Compile Include="vb_Price_Osc.Indicator.VB" />
+    <Compile Include="vb_Standard_Error_Bands.Indicator.VB" />
+    <Compile Include="vb_C_MornStar_EveStar.Indicator.VB" />
+    <Compile Include="vb_Volatility.Indicator.VB" />
+    <Compile Include="vb_Correlation.Indicator.VB" />
+    <Compile Include="vb_Head_And_Shoulders.Indicator.VB" />
+    <Compile Include="vb_Consecutive_Ups.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Adaptive.Indicator.VB" />
+    <Compile Include="vb_New_High_for_Week.Indicator.VB" />
+    <Compile Include="vb_New_Low_for_Day.Indicator.VB" />
+    <Compile Include="vb_Spread__Ratio.Indicator.VB" />
+    <Compile Include="vb_First_Bar_of_Week.Indicator.VB" />
+    <Compile Include="vb_Keltner_Channel.Indicator.VB" />
+    <Compile Include="vb_ADX.Indicator.VB" />
+    <Compile Include="vb_Stochastic_Fast.Indicator.VB" />
+    <Compile Include="vb_Brkout_of_X_Bar_Low.Indicator.VB" />
+    <Compile Include="vb_Volume.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Exponential.Indicator.VB" />
+    <Compile Include="vb_Volume_Gradient.Indicator.VB" />
+    <Compile Include="vb_Cust_Gradient_Unbnd.Indicator.VB" />
+    <Compile Include="vb_McClellan_Osc.Indicator.VB" />
+    <Compile Include="vb_Mkt_Facilitation_Idx.Indicator.VB" />
+    <Compile Include="vb_C_Doji.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_1_Line.Indicator.VB" />
+    <Compile Include="vb_Chaos_AC_Oscillator.Indicator.VB" />
+    <Compile Include="vb_Crossovers_per_Bar.Indicator.VB" />
+    <Compile Include="vb_Momentum_Increasing.Indicator.VB" />
+    <Compile Include="vb_C_PierceLine_DkCloud.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Exp_Ribbon.Indicator.VB" />
+    <Compile Include="vb_Consecutive_Downs.Indicator.VB" />
+    <Compile Include="vb_Momentum_Decreasing.Indicator.VB" />
+    <Compile Include="vb__Chart_ToolBar_Example_.Indicator.VB" />
+    <Compile Include="vb_Market_Thrust.Indicator.VB" />
+    <Compile Include="vb_Money_Flow.Indicator.VB" />
+    <Compile Include="vb_Price_Greate_Avg.Indicator.VB" />
+    <Compile Include="vb_Chaos_Gator.Indicator.VB" />
+    <Compile Include="vb_Floating_Text.Indicator.VB" />
+    <Compile Include="vb_MACD.Indicator.VB" />
+    <Compile Include="vb_Bid_And_Ask.Indicator.VB" />
+    <Compile Include="vb_Percent_Decrease.Indicator.VB" />
+    <Compile Include="vb_C_Hammer_HangingMan.Indicator.VB" />
+    <Compile Include="vb_Arms_Index_TRIN.Indicator.VB" />
+    <Compile Include="vb_Stochastic_Slow.Indicator.VB" />
+    <Compile Include="vb_Linear_Reg_Curve.Indicator.VB" />
+    <Compile Include="vb_Island_Reversal_Up.Indicator.VB" />
+    <Compile Include="vb_Custom_PaintBar.Indicator.VB" />
+    <Compile Include="vb_C_BullHar_BearHar.Indicator.VB" />
+    <Compile Include="vb_PercentChg.Indicator.VB" />
+    <Compile Include="vb_CCI_Average.Indicator.VB" />
+    <Compile Include="vb_Pennant_Brkout.Indicator.VB" />
+    <Compile Include="vb_Rate_of_Chg.Indicator.VB" />
+    <Compile Include="vb_VWAP_reset.Indicator.VB" />
+    <Compile Include="vb_Price_Reversal.Indicator.VB" />
+    <Compile Include="vb_First_Bar_of_Year.Indicator.VB" />
+    <Compile Include="vb_New_High_for_Chart.Indicator.VB" />
+    <Compile Include="vb_Absolute_Breadth.Indicator.VB" />
+    <Compile Include="vb_Ulcer_Index.Indicator.VB" />
+    <Compile Include="vb_Detrended_Price_Osc.Indicator.VB" />
+    <Compile Include="vb_Count_Criteria_SM.Indicator.VB" />
+    <Compile Include="vb_Volume_Ratio.Indicator.VB" />
+    <Compile Include="vb_Chaikin_Osc.Indicator.VB" />
+    <Compile Include="vb_Price_Volume_Trend.Indicator.VB" />
+    <Compile Include="vb_New_High_for_Year.Indicator.VB" />
+    <Compile Include="vb_Gap_Dn_Bar.Indicator.VB" />
+    <Compile Include="vb_HPI.Indicator.VB" />
+    <Compile Include="vb_Time_Series_Forecast.Indicator.VB" />
+    <Compile Include="vb_Count_Criteria_PB.Indicator.VB" />
+    <Compile Include="vb_Inside_Bar.Indicator.VB" />
+    <Compile Include="vb_New_High_for_Month.Indicator.VB" />
+    <Compile Include="vb_Island_Reversal_Dn.Indicator.VB" />
+    <Compile Include="vb_Volatility_Std_Dev.Indicator.VB" />
+    <Compile Include="vb_First_Bar_of_Day.Indicator.VB" />
+    <Compile Include="vb_Mov_Avg_Triangular.Indicator.VB" />
+    <Compile Include="vb_Bollinger_Bands.Indicator.VB" />
+    <Compile Include="vb_New_Low_for_Year.Indicator.VB" />
+    <Compile Include="vb_Weighted_Close.Indicator.VB" />
+    <Compile Include="vb_DMI.Indicator.VB" />
+    <Compile Include="vb_Pivot_Rev_Gen__Dn.Indicator.VB" />
+    <Compile Include="vb_Price_Greater_Avg.Indicator.VB" />
+    <Compile Include="vb_Comm_Channel_Index.Indicator.VB" />
+    <Compile Include="vb_Pivot_Rev_Gen__Up.Indicator.VB" />
+    <Compile Include="vb_C_MornDoji_EveDoji.Indicator.VB" />
+    <Compile Include="vb_Key_Reversal_Up.Indicator.VB" />
+    <Compile Include="vb_Brkout_of_X_Bar_High.Indicator.VB" />
+    <Compile Include="vb_Volume_Dn.Indicator.VB" />
+    <Compile Include="vb_Expiration.Indicator.VB" />
+    <Compile Include="vb_TRIX.Indicator.VB" />
+    <Compile Include="vb_On_Balance_Volume.Indicator.VB" />
+    <Compile Include="vb_Day_OpenHiLo_RT.Indicator.VB" />
+    <Compile Include="vb_ZigZag_Pcnt.Indicator.VB" />
+    <Compile Include="vb_Cust_Gradient_Bnd.Indicator.VB" />
+    <Compile Include="vb_Outside_Bar.Indicator.VB" />
+    <Compile Include="vb_Volume_Osc.Indicator.VB" />
+    <Compile Include="vb_C_BullEng_BearEng.Indicator.VB" />
+    <Compile Include="vb_Ultimate_Osc.Indicator.VB" />
+    <Compile Include="vb_MovAvg_Cross_SX.Strategy.VB" />
+    <Compile Include="vb__ChartToolBar_Trading_.Strategy.VB" />
+    <Compile Include="vb_Pivot_Reversal_SE.Strategy.VB" />
+    <Compile Include="vb_Profit_Target.Strategy.VB" />
+    <Compile Include="vb_Volty_Expan_Open_SE.Strategy.VB" />
+    <Compile Include="vb_Close_at_End_of_Day.Strategy.VB" />
+    <Compile Include="vb_Channel_Breakout_LE.Strategy.VB" />
+    <Compile Include="vb_RSI_LE.Strategy.VB" />
+    <Compile Include="vb_Trendline_LE.Strategy.VB" />
+    <Compile Include="vb_Volty_Expan_Close_LE.Strategy.VB" />
+    <Compile Include="vb_EntryBar__Stop_LX.Strategy.VB" />
+    <Compile Include="vb_Percent_Stop_SX.Strategy.VB" />
+    <Compile Include="vb_Profitable_Closes_LX.Strategy.VB" />
+    <Compile Include="vb_EntryBar_Pnt_Stop_SX.Strategy.VB" />
+    <Compile Include="vb_Key_Reversal_SE.Strategy.VB" />
+    <Compile Include="vb__StpOrLim_Exit.Strategy.VB" />
+    <Compile Include="vb_Custom_Strategy_SE.Strategy.VB" />
+    <Compile Include="vb_MomentumLE.Strategy.VB" />
+    <Compile Include="vb_MovAvg2Line_Cross_LE.Strategy.VB" />
+    <Compile Include="vb_Bollinger_Bands_SE.Strategy.VB" />
+    <Compile Include="vb_Parabolic_m_Trail_SX.Strategy.VB" />
+    <Compile Include="vb_Percent_Stop_LX.Strategy.VB" />
+    <Compile Include="vb_Channel_Trailing_LX.Strategy.VB" />
+    <Compile Include="vb_Optimize_by_Sharpe_ratio.Strategy.VB" />
+    <Compile Include="vb_Pivot_Extension_SE.Strategy.VB" />
+    <Compile Include="vb_MovAvg3Line_Cross_LE.Strategy.VB" />
+    <Compile Include="vb_Stochastic_Slow_SE.Strategy.VB" />
+    <Compile Include="vb__Percent_Exit_Pair.Strategy.VB" />
+    <Compile Include="vb_Gap_Up_LE.Strategy.VB" />
+    <Compile Include="vb_Keltner_Channel_LE.Strategy.VB" />
+    <Compile Include="vb_Price_Channel_LE.Strategy.VB" />
+    <Compile Include="vb_Key_Reversal_SX.Strategy.VB" />
+    <Compile Include="vb_Parabolic_SE.Strategy.VB" />
+    <Compile Include="vb_Dollar_Trailing.Strategy.VB" />
+    <Compile Include="vb_Channel_Trailing_SX.Strategy.VB" />
+    <Compile Include="vb_Pivot_Reversal_LE.Strategy.VB" />
+    <Compile Include="vb_ATR_Trailing_LX.Strategy.VB" />
+    <Compile Include="vb_Volty_Expan_Open_LE.Strategy.VB" />
+    <Compile Include="vb_Outside_Bar_LE.Strategy.VB" />
+    <Compile Include="vb_Pivot_Extension_LE.Strategy.VB" />
+    <Compile Include="vb__Stops_And_Targets.Strategy.VB" />
+    <Compile Include="vb_Price_Channel_SE.Strategy.VB" />
+    <Compile Include="vb_Key_Reversal_LX.Strategy.VB" />
+    <Compile Include="vb_Volty_Expan_Close_SX.Strategy.VB" />
+    <Compile Include="vb_Consecutive_Ups_Downs.Strategy.VB" />
+    <Compile Include="vb_PercentR_LE.Strategy.VB" />
+    <Compile Include="vb_Gap_Down_SE.Strategy.VB" />
+    <Compile Include="vb_From_Broker_To_Strategy_MP_Synchronizer.Strategy.VB" />
+    <Compile Include="vb_RSI_SE.Strategy.VB" />
+    <Compile Include="vb_TimeExit_Bars_LX.Strategy.VB" />
+    <Compile Include="vb_Profitable_Closes_SX.Strategy.VB" />
+    <Compile Include="vb_ATR_Trailing_SX.Strategy.VB" />
+    <Compile Include="vb_Volty_Expan_Close_LX.Strategy.VB" />
+    <Compile Include="vb_Custom_Strategy_SX.Strategy.VB" />
+    <Compile Include="vb_EntryBar_ATR_Stop_SX.Strategy.VB" />
+    <Compile Include="vb_Outside_Bar_SE.Strategy.VB" />
+    <Compile Include="vb_Key_Reversal_LE.Strategy.VB" />
+    <Compile Include="vb_MovAvg_Cross_SE.Strategy.VB" />
+    <Compile Include="vb_MACD_LE.Strategy.VB" />
+    <Compile Include="vb_MomentumSE.Strategy.VB" />
+    <Compile Include="vb_ATR_Trgt_And_Trail_LX.Strategy.VB" />
+    <Compile Include="vb_Parabolic_m_Trail_LX.Strategy.VB" />
+    <Compile Include="vb_EntryBar_Pnt_Stop_LX.Strategy.VB" />
+    <Compile Include="vb_MovAvg2Line_Cross_SE.Strategy.VB" />
+    <Compile Include="vb_Stochastic_Slow_LE.Strategy.VB" />
+    <Compile Include="vb_PercentR_SE.Strategy.VB" />
+    <Compile Include="vb_Stop_Loss.Strategy.VB" />
+    <Compile Include="vb_From_Strategy_To_Broker_MP_Synchronizer.Strategy.VB" />
+    <Compile Include="vb_ATR_Trgt_And_Trail_SX.Strategy.VB" />
+    <Compile Include="vb_Trendline_SE.Strategy.VB" />
+    <Compile Include="vb_Percent_Trailing.Strategy.VB" />
+    <Compile Include="vb_Keltner_Channel_SE.Strategy.VB" />
+    <Compile Include="vb_Breakeven_Stop.Strategy.VB" />
+    <Compile Include="vb_Volty_Expan_Close_SE.Strategy.VB" />
+    <Compile Include="vb_EntryBar__Stop_SX.Strategy.VB" />
+    <Compile Include="vb_Inside_Bar_LE.Strategy.VB" />
+    <Compile Include="vb_MovAvg3Line_Cross_SE.Strategy.VB" />
+    <Compile Include="vb_Custom_Strategy_LX.Strategy.VB" />
+    <Compile Include="vb_Channel_Breakout_SE.Strategy.VB" />
+    <Compile Include="vb_Inside_Bar_SE.Strategy.VB" />
+    <Compile Include="vb_TimeExit_Bars_SX.Strategy.VB" />
+    <Compile Include="vb__Historical_Entry.Strategy.VB" />
+    <Compile Include="vb_MovAvg_Cross_LE.Strategy.VB" />
+    <Compile Include="vb_TimeExit_Calndr_LX.Strategy.VB" />
+    <Compile Include="vb_Parabolic_LE.Strategy.VB" />
+    <Compile Include="vb_Custom_Strategy_LE.Strategy.VB" />
+    <Compile Include="vb_EntryBar_ATR_Stop_LX.Strategy.VB" />
+    <Compile Include="vb_Bollinger_Bands_LE.Strategy.VB" />
+    <Compile Include="vb_MovAvg_Cross_LX.Strategy.VB" />
+    <Compile Include="vb_MACD_SE.Strategy.VB" />
+    <Compile Include="vb_TimeExit_Calndr_SX.Strategy.VB" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+</Project>

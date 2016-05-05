@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{BA43FF06-FD46-45B7-BAC8-6E047AD0F86C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>PLStudies2010</RootNamespace>
+    <AssemblyName>PLStudies2010</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing.dll" />
+    <Reference Include="System.Windows.Forms.dll" />
+    <Reference Include="System.dll" />
+    <Reference Include="System.Data.dll" />
+    <Reference Include="System.Xml.dll" />
+    <Reference Include="System.Core.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLTypes.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLStudiesProxy.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLBuiltInFunctions.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLTradeManager.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\ATCenterProxy.interop.dll" />
+    <Reference Include="C:\Program Files\TS Support\MultiCharts .NET64\PLDataLoader.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="New_High_for_Day.Indicator.CS" />
+    <Compile Include="MACD_Gradient.Indicator.CS" />
+    <Compile Include="Price_Greate_Avg.Indicator.CS" />
+    <Compile Include="Consecutive_Ups.Indicator.CS" />
+    <Compile Include="TrendLines_Automatic.Indicator.CS" />
+    <Compile Include="Parabolic_SAR.Indicator.CS" />
+    <Compile Include="Volatility_Std_Dev.Indicator.CS" />
+    <Compile Include="Detrended_Price_Osc.Indicator.CS" />
+    <Compile Include="Swing_Index.Indicator.CS" />
+    <Compile Include="Money_Flow.Indicator.CS" />
+    <Compile Include="New_Low_for_Week.Indicator.CS" />
+    <Compile Include="_TPO_.Indicator.CS" />
+    <Compile Include="Momentum.Indicator.CS" />
+    <Compile Include="Typical_Price.Indicator.CS" />
+    <Compile Include="Spread__Ratio.Indicator.CS" />
+    <Compile Include="C_MornDoji_EveDoji.Indicator.CS" />
+    <Compile Include="Mov_Avg_Envelopes.Indicator.CS" />
+    <Compile Include="Cust_Gradient_Bnd.Indicator.CS" />
+    <Compile Include="Gap_Dn_Bar.Indicator.CS" />
+    <Compile Include="C_Hammer_HangingMan.Indicator.CS" />
+    <Compile Include="Next_3rd_Friday.Indicator.CS" />
+    <Compile Include="Comm_Channel_Index.Indicator.CS" />
+    <Compile Include="Block_Trades_per_Bar.Indicator.CS" />
+    <Compile Include="Volume.Indicator.CS" />
+    <Compile Include="RSI.Indicator.CS" />
+    <Compile Include="Formula_OHLC.Indicator.CS" />
+    <Compile Include="Count_Criteria_SM.Indicator.CS" />
+    <Compile Include="AdvanceDecl_Ratio.Indicator.CS" />
+    <Compile Include="Volatility.Indicator.CS" />
+    <Compile Include="Volume_Osc.Indicator.CS" />
+    <Compile Include="Bollinger_Bands.Indicator.CS" />
+    <Compile Include="ADXR.Indicator.CS" />
+    <Compile Include="Comm_Sel_Index.Indicator.CS" />
+    <Compile Include="Mov_Avg_Triangular.Indicator.CS" />
+    <Compile Include="Floor_Trader_Pivots.Indicator.CS" />
+    <Compile Include="Cust_Gradient_Unbnd.Indicator.CS" />
+    <Compile Include="MouseEventsExample.Indicator.CS" />
+    <Compile Include="Brkout_of_X_Bar_High.Indicator.CS" />
+    <Compile Include="Chaos_Fractals.Indicator.CS" />
+    <Compile Include="TRIX.Indicator.CS" />
+    <Compile Include="OHLC_Yesterday.Indicator.CS" />
+    <Compile Include="Price_Volume_Trend.Indicator.CS" />
+    <Compile Include="Keltner_Channel.Indicator.CS" />
+    <Compile Include="VWAP_reset.Indicator.CS" />
+    <Compile Include="ADX.Indicator.CS" />
+    <Compile Include="PercentR.Indicator.CS" />
+    <Compile Include="C_PierceLine_DkCloud.Indicator.CS" />
+    <Compile Include="AdvanceDecl_Line.Indicator.CS" />
+    <Compile Include="Percent_Decrease.Indicator.CS" />
+    <Compile Include="New_Low_for_Year.Indicator.CS" />
+    <Compile Include="Island_Reversal_Dn.Indicator.CS" />
+    <Compile Include="Gap_Up_Bar.Indicator.CS" />
+    <Compile Include="Pennant_Brkout.Indicator.CS" />
+    <Compile Include="New_Low_for_Day.Indicator.CS" />
+    <Compile Include="Volume_Gradient.Indicator.CS" />
+    <Compile Include="Mov_Avg_Adaptive.Indicator.CS" />
+    <Compile Include="C_Doji.Indicator.CS" />
+    <Compile Include="Bid_And_Ask.Indicator.CS" />
+    <Compile Include="Mov_Avg_2_Lines.Indicator.CS" />
+    <Compile Include="Ultimate_Osc.Indicator.CS" />
+    <Compile Include="Floating_Text.Indicator.CS" />
+    <Compile Include="Outside_Bar.Indicator.CS" />
+    <Compile Include="MACD.Indicator.CS" />
+    <Compile Include="Day_OpenHiLo_Lines.Indicator.CS" />
+    <Compile Include="Accum_Swing_Index.Indicator.CS" />
+    <Compile Include="Spread__Diff.Indicator.CS" />
+    <Compile Include="Volume_Brkout.Indicator.CS" />
+    <Compile Include="Mov_Avg_Exponential.Indicator.CS" />
+    <Compile Include="Price_Less_Avg.Indicator.CS" />
+    <Compile Include="C_BullEng_BearEng.Indicator.CS" />
+    <Compile Include="Stochastic_SlowK.Indicator.CS" />
+    <Compile Include="Island_Reversal_Up.Indicator.CS" />
+    <Compile Include="Head_And_Shoulders.Indicator.CS" />
+    <Compile Include="C_ShootingStar.Indicator.CS" />
+    <Compile Include="Standard_Error_Bands.Indicator.CS" />
+    <Compile Include="New_High_for_Month.Indicator.CS" />
+    <Compile Include="_Market_Depth_on_Chart_.Indicator.CS" />
+    <Compile Include="Ulcer_Index.Indicator.CS" />
+    <Compile Include="Mov_Avg_Crossover.Indicator.CS" />
+    <Compile Include="ZigZag_Pcnt.Indicator.CS" />
+    <Compile Include="Momentum_Decreasing.Indicator.CS" />
+    <Compile Include="Chaos_Gator.Indicator.CS" />
+    <Compile Include="Pivot_Rev_Gen__Dn.Indicator.CS" />
+    <Compile Include="Chaikin_Osc.Indicator.CS" />
+    <Compile Include="Day_of_Week.Indicator.CS" />
+    <Compile Include="Mass_Index.Indicator.CS" />
+    <Compile Include="Correlation.Indicator.CS" />
+    <Compile Include="First_Bar_of_Month.Indicator.CS" />
+    <Compile Include="DMI.Indicator.CS" />
+    <Compile Include="Linear_Reg_Curve.Indicator.CS" />
+    <Compile Include="Chaos_Awesome_Oscillator.Indicator.CS" />
+    <Compile Include="Time_Series_Forecast.Indicator.CS" />
+    <Compile Include="Linear_Reg_Line.Indicator.CS" />
+    <Compile Include="Chaos_AC_Oscillator.Indicator.CS" />
+    <Compile Include="Pivot_Low.Indicator.CS" />
+    <Compile Include="Volume_Up.Indicator.CS" />
+    <Compile Include="Open_Interest.Indicator.CS" />
+    <Compile Include="Mov_Avg_Weighted.Indicator.CS" />
+    <Compile Include="_Chart_ToolBar_Example_.Indicator.CS" />
+    <Compile Include="Crossovers_per_Bar.Indicator.CS" />
+    <Compile Include="Percent_Increase.Indicator.CS" />
+    <Compile Include="New_High_for_Chart.Indicator.CS" />
+    <Compile Include="Pivot_High.Indicator.CS" />
+    <Compile Include="New_Low_for_Month.Indicator.CS" />
+    <Compile Include="Chaos_Alligator.Indicator.CS" />
+    <Compile Include="Accum_Dist__PrVol.Indicator.CS" />
+    <Compile Include="Custom_PaintBar.Indicator.CS" />
+    <Compile Include="Market_Thrust.Indicator.CS" />
+    <Compile Include="Volume_Ratio.Indicator.CS" />
+    <Compile Include="HPI.Indicator.CS" />
+    <Compile Include="Mov_Avg_3_Lines.Indicator.CS" />
+    <Compile Include="Avg_Close_Greater_Avg_Open.Indicator.CS" />
+    <Compile Include="Price_Reversal.Indicator.CS" />
+    <Compile Include="New_Intraday_HiLo.Indicator.CS" />
+    <Compile Include="Day_OpenHiLo_RT.Indicator.CS" />
+    <Compile Include="C_MornStar_EveStar.Indicator.CS" />
+    <Compile Include="Volume_Rate_of_Chg.Indicator.CS" />
+    <Compile Include="ZigZag_Percent.Indicator.CS" />
+    <Compile Include="Crossunders_per_Bar.Indicator.CS" />
+    <Compile Include="First_Bar_of_Week.Indicator.CS" />
+    <Compile Include="Average_True_Range.Indicator.CS" />
+    <Compile Include="Inside_Bar.Indicator.CS" />
+    <Compile Include="PercentChg.Indicator.CS" />
+    <Compile Include="Custom_ShowMe.Indicator.CS" />
+    <Compile Include="Stochastic_Slow.Indicator.CS" />
+    <Compile Include="New_NDay_HiLo.Indicator.CS" />
+    <Compile Include="Weighted_Close.Indicator.CS" />
+    <Compile Include="Key_Reversal_Dn.Indicator.CS" />
+    <Compile Include="Brkout_of_X_Bar_Low.Indicator.CS" />
+    <Compile Include="Mov_Avg_Exp_Ribbon.Indicator.CS" />
+    <Compile Include="ZigZag_Pnts.Indicator.CS" />
+    <Compile Include="First_Bar_of_Day.Indicator.CS" />
+    <Compile Include="On_Balance_Volume.Indicator.CS" />
+    <Compile Include="Accum_Dist__BuyPr.Indicator.CS" />
+    <Compile Include="New_Low_for_Chart.Indicator.CS" />
+    <Compile Include="Volume_Dn.Indicator.CS" />
+    <Compile Include="Consecutive_Downs.Indicator.CS" />
+    <Compile Include="Price_Greater_Avg.Indicator.CS" />
+    <Compile Include="Mov_Avg_1_Line.Indicator.CS" />
+    <Compile Include="Key_Reversal_Up.Indicator.CS" />
+    <Compile Include="Price_Osc.Indicator.CS" />
+    <Compile Include="Mkt_Facilitation_Idx.Indicator.CS" />
+    <Compile Include="Bid_And_Ask_Vol_Ratio.Indicator.CS" />
+    <Compile Include="Arms_Index_TRIN.Indicator.CS" />
+    <Compile Include="C_BullHar_BearHar.Indicator.CS" />
+    <Compile Include="Absolute_Breadth.Indicator.CS" />
+    <Compile Include="Count_Criteria_PB.Indicator.CS" />
+    <Compile Include="New_High_for_Year.Indicator.CS" />
+    <Compile Include="Avg_Close_Less_Avg_Open.Indicator.CS" />
+    <Compile Include="Gapless_Bar_Chart.Indicator.CS" />
+    <Compile Include="First_Bar_of_Year.Indicator.CS" />
+    <Compile Include="_Market_Depth_on_Chart_2_.Indicator.CS" />
+    <Compile Include="New_High_for_Week.Indicator.CS" />
+    <Compile Include="Pivot_Rev_Gen__Up.Indicator.CS" />
+    <Compile Include="Volume_Avg.Indicator.CS" />
+    <Compile Include="Rate_of_Chg.Indicator.CS" />
+    <Compile Include="Price_Channel.Indicator.CS" />
+    <Compile Include="McClellan_Osc.Indicator.CS" />
+    <Compile Include="C_3WhSolds_3BlkCrows.Indicator.CS" />
+    <Compile Include="Stochastic_Fast.Indicator.CS" />
+    <Compile Include="Expiration.Indicator.CS" />
+    <Compile Include="Ease_of_Movement.Indicator.CS" />
+    <Compile Include="Momentum_Increasing.Indicator.CS" />
+    <Compile Include="CCI_Average.Indicator.CS" />
+    <Compile Include="Custom_Strategy_LE.Strategy.CS" />
+    <Compile Include="Parabolic_m_Trail_LX.Strategy.CS" />
+    <Compile Include="Volty_Expan_Open_SE.Strategy.CS" />
+    <Compile Include="Trendline_SE.Strategy.CS" />
+    <Compile Include="Volty_Expan_Close_SE.Strategy.CS" />
+    <Compile Include="MovAvg_Cross_SE.Strategy.CS" />
+    <Compile Include="EntryBar_ATR_Stop_LX.Strategy.CS" />
+    <Compile Include="TimeExit_Bars_LX.Strategy.CS" />
+    <Compile Include="Percent_Stop_LX.Strategy.CS" />
+    <Compile Include="Percent_Trailing.Strategy.CS" />
+    <Compile Include="TimeExit_Calndr_SX.Strategy.CS" />
+    <Compile Include="Parabolic_SE.Strategy.CS" />
+    <Compile Include="Gap_Up_LE.Strategy.CS" />
+    <Compile Include="Inside_Bar_SE.Strategy.CS" />
+    <Compile Include="Custom_Strategy_LX.Strategy.CS" />
+    <Compile Include="Volty_Expan_Open_LE.Strategy.CS" />
+    <Compile Include="Bollinger_Bands_LE.Strategy.CS" />
+    <Compile Include="Keltner_Channel_LE.Strategy.CS" />
+    <Compile Include="Key_Reversal_LX.Strategy.CS" />
+    <Compile Include="MovAvg3Line_Cross_SE.Strategy.CS" />
+    <Compile Include="Pivot_Extension_SE.Strategy.CS" />
+    <Compile Include="Parabolic_m_Trail_SX.Strategy.CS" />
+    <Compile Include="Custom_Strategy_SX.Strategy.CS" />
+    <Compile Include="Bollinger_Bands_SE.Strategy.CS" />
+    <Compile Include="EntryBar_ATR_Stop_SX.Strategy.CS" />
+    <Compile Include="From_Strategy_To_Broker_MP_Synchronizer.Strategy.CS" />
+    <Compile Include="Profitable_Closes_LX.Strategy.CS" />
+    <Compile Include="Channel_Trailing_LX.Strategy.CS" />
+    <Compile Include="Profit_Target.Strategy.CS" />
+    <Compile Include="Inside_Bar_LE.Strategy.CS" />
+    <Compile Include="_ChartToolBar_Trading_.Strategy.CS" />
+    <Compile Include="Trendline_LE.Strategy.CS" />
+    <Compile Include="RSI_LE.Strategy.CS" />
+    <Compile Include="Portfolio_Rotation.Strategy.CS" />
+    <Compile Include="Percent_Stop_SX.Strategy.CS" />
+    <Compile Include="RSI_SE.Strategy.CS" />
+    <Compile Include="Parabolic_LE.Strategy.CS" />
+    <Compile Include="Stochastic_Slow_LE.Strategy.CS" />
+    <Compile Include="ATR_Trgt_And_Trail_LX.Strategy.CS" />
+    <Compile Include="Portfolio_SpreadTradingSystem_Master.Strategy.CS" />
+    <Compile Include="MomentumSE.Strategy.CS" />
+    <Compile Include="Price_Channel_SE.Strategy.CS" />
+    <Compile Include="Portfolio_SpreadTradingSystem_Slave.Strategy.CS" />
+    <Compile Include="Channel_Breakout_SE.Strategy.CS" />
+    <Compile Include="Volty_Expan_Close_LX.Strategy.CS" />
+    <Compile Include="Key_Reversal_SE.Strategy.CS" />
+    <Compile Include="Close_at_End_of_Day.Strategy.CS" />
+    <Compile Include="ATR_Trailing_LX.Strategy.CS" />
+    <Compile Include="Portfolio_Rank_MM.Strategy.CS" />
+    <Compile Include="Optimize_by_Sharpe_ratio.Strategy.CS" />
+    <Compile Include="Pivot_Reversal_LE.Strategy.CS" />
+    <Compile Include="TimeExit_Calndr_LX.Strategy.CS" />
+    <Compile Include="ATR_Trgt_And_Trail_SX.Strategy.CS" />
+    <Compile Include="EntryBar__Stop_SX.Strategy.CS" />
+    <Compile Include="MovAvg_Cross_LX.Strategy.CS" />
+    <Compile Include="EntryBar__Stop_LX.Strategy.CS" />
+    <Compile Include="Stop_Loss.Strategy.CS" />
+    <Compile Include="Pivot_Reversal_SE.Strategy.CS" />
+    <Compile Include="MACD_LE.Strategy.CS" />
+    <Compile Include="_Historical_Entry.Strategy.CS" />
+    <Compile Include="MovAvg_Cross_SX.Strategy.CS" />
+    <Compile Include="EntryBar_Pnt_Stop_SX.Strategy.CS" />
+    <Compile Include="Outside_Bar_SE.Strategy.CS" />
+    <Compile Include="Gap_Down_SE.Strategy.CS" />
+    <Compile Include="MovAvg_Cross_LE.Strategy.CS" />
+    <Compile Include="Channel_Breakout_LE.Strategy.CS" />
+    <Compile Include="Key_Reversal_SX.Strategy.CS" />
+    <Compile Include="Volty_Expan_Close_SX.Strategy.CS" />
+    <Compile Include="MovAvg2Line_Cross_LE.Strategy.CS" />
+    <Compile Include="Volty_Expan_Close_LE.Strategy.CS" />
+    <Compile Include="Portfolio_Rotation_MM.Strategy.CS" />
+    <Compile Include="Key_Reversal_LE.Strategy.CS" />
+    <Compile Include="TimeExit_Bars_SX.Strategy.CS" />
+    <Compile Include="MomentumLE.Strategy.CS" />
+    <Compile Include="MovAvg2Line_Cross_SE.Strategy.CS" />
+    <Compile Include="Pivot_Extension_LE.Strategy.CS" />
+    <Compile Include="Price_Channel_LE.Strategy.CS" />
+    <Compile Include="MovAvg3Line_Cross_LE.Strategy.CS" />
+    <Compile Include="_StpOrLim_Exit.Strategy.CS" />
+    <Compile Include="MACD_SE.Strategy.CS" />
+    <Compile Include="From_Broker_To_Strategy_MP_Synchronizer.Strategy.CS" />
+    <Compile Include="Custom_Strategy_SE.Strategy.CS" />
+    <Compile Include="PercentR_SE.Strategy.CS" />
+    <Compile Include="Profitable_Closes_SX.Strategy.CS" />
+    <Compile Include="_Stops_And_Targets.Strategy.CS" />
+    <Compile Include="EntryBar_Pnt_Stop_LX.Strategy.CS" />
+    <Compile Include="Dollar_Trailing.Strategy.CS" />
+    <Compile Include="ATR_Trailing_SX.Strategy.CS" />
+    <Compile Include="Portfolio_Rank_Signal_Base.Strategy.CS" />
+    <Compile Include="Consecutive_Ups_Downs.Strategy.CS" />
+    <Compile Include="Channel_Trailing_SX.Strategy.CS" />
+    <Compile Include="_Percent_Exit_Pair.Strategy.CS" />
+    <Compile Include="Breakeven_Stop.Strategy.CS" />
+    <Compile Include="Stochastic_Slow_SE.Strategy.CS" />
+    <Compile Include="Keltner_Channel_SE.Strategy.CS" />
+    <Compile Include="Outside_Bar_LE.Strategy.CS" />
+    <Compile Include="PercentR_LE.Strategy.CS" />
+    <Compile Include="CRTDR_Signal.Strategy.CS" />
+    <Compile Include="CRTDR.Indicator.CS" />
+    <Compile Include="CutlersRSI.Indicator.CS" />
+    <Compile Include="CRTDRIndicatorMath.Function.CS" />
+    <Compile Include="CutlersRSIIndicatorMath.Function.CS" />
+    <Compile Include="CRTDR_Signal_Backtest.Strategy.CS" />
+    <Compile Include="optimize_by_K_Ratio.Strategy.CS" />
+    <Compile Include="K_RatioBarsMath.Function.CS" />
+    <Compile Include="Portfolio_Master.Strategy.CS" />
+    <Compile Include="K_Ratio.Strategy.CS" />
+    <Compile Include="K_RatioMath.Function.CS" />
+    <Compile Include="K_Ratio.Indicator.CS" />
+    <Compile Include="Slope.Function.CS" />
+    <Compile Include="Slope.Strategy.CS" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
