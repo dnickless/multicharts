@@ -34,15 +34,25 @@ namespace PowerLanguage.Strategy
         protected override void StartCalc()
         {
             if (Environment.ApplicationCode != EApplicationCode.Portfolio)
+			{
                 ExecControl.Abort("Signal can be applied in portfolio only.");
+			}
+			
             m_KRatio.NumberOfDataBarsInCalendarYear = 1;
         }
 
 		[Input]
 		public bool DoReinvestment { get; set; }
 		
+		private void Log(string message, params object[] parameters)
+		{
+			Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", "MONEY MGMT", string.Format(message, parameters));
+		}
+		
         protected override void CalcBar()
         {
+			Log("Calculating MM signal");
+			
 			//if(true) //Environment.Optimizing
 			{
 				var result = m_KRatio.Value;
