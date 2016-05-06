@@ -22,7 +22,7 @@ namespace PowerLanguage.Strategy
             : base(_ctx)
         {
             MaxNumberOfEntriesPerDayShortLimit = 2;
-            MaxNumberOfEntriesPerDayShortLimit = 5;
+            MaxNumberOfEntriesPerDayLongLimit = 5;
         }
 
         protected override void Create()
@@ -46,7 +46,7 @@ namespace PowerLanguage.Strategy
 		
 		private void Log(string message, params object[] parameters)
 		{
-			Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", "MONEY MGMT", string.Format(message, parameters));
+			//if(!Environment.Optimizing) Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", "MONEY MGMT", string.Format(message, parameters));
 		}
 		
         protected override void CalcBar()
@@ -81,16 +81,16 @@ namespace PowerLanguage.Strategy
 	 			//var rsi = cutlersRSIIndicatorMath.CalcNextValue(numberOfEntries);
 				
 	            // risk management says: Do not buy in case of two many entry signals, markets seem to be bumpy
-                var allowShort = numberOfEntries < MaxNumberOfEntriesPerDayShortLimit;
-                var allowLong = numberOfEntries < MaxNumberOfEntriesPerDayLongLimit;
+                var allowShort = numberOfEntries <= MaxNumberOfEntriesPerDayShortLimit;
+                var allowLong = numberOfEntries <= MaxNumberOfEntriesPerDayLongLimit;
 	            
 				foreach (var strategy in listOfStrategiesWithOrders)
 	            {
 					strategy.AllowEntriesShort = allowShort;
 					strategy.AllowEntriesLong = allowLong;
-	                strategy.EntryContracts = (int)((double)(this.InitialCapital + (DoReinvestment ? this.Portfolio.NetProfit : 0.0) - this.Portfolio.InvestedCapital) / (double)numberOfEntries / Math.Abs(strategy.PortfolioData[PortfolioHelpFunctions.PotentialEntryPrice].safe_cast2double()));
-//					if(strategy.EntryContracts == 0)
-//						Output.WriteLine(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
+	                strategy.EntryContracts = (int)((double)(this.InitialCapital + (DoReinvestment ? this.Portfolio.NetProfit : 0.0) - this.Portfolio.InvestedCapital) / 100.0 * Portfolio.MaxRiskEquityPerPosPercent / Math.Abs(strategy.Signals[0].Bars.CloseValue));
+					if(strategy.EntryContracts == 0)
+						Log(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
 	            }
 			}
         }

@@ -91,7 +91,7 @@ namespace PowerLanguage.Strategy {
         
 		private void Log(string message, params object[] parameters)
 		{
-			//Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
+			//if(!Environment.Optimizing) Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
 		}
 		
         protected override void CalcBar(){
@@ -111,15 +111,18 @@ namespace PowerLanguage.Strategy {
        		Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value);
 			if(StrategyInfo.MarketPosition == 0)
 			{
+				MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
 	            if (GetSignalUp(crtdr, rsi, trend))
 	            {
 					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
 	           		Log("!!!LONG !!! Attempting to buy {0}", numLots);
+					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
 	                buyOrder.Send(numLots);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
 //	            {
 //	           		Output.WriteLine("SHORT on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value);
+//					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = -Bars.CloseValue;
 //					sellShortOrder.Send(Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / 10.0 / Bars.CloseValue));
 //	            }
 				else
