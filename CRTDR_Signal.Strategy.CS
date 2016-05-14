@@ -109,14 +109,15 @@ namespace PowerLanguage.Strategy {
 			var rsi = trend == Trend.Down ? rsiDown : (trend == Trend.Up ? rsiUp : rsiFlat);
 			
        		Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value);
+			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
 			if(StrategyInfo.MarketPosition == 0)
 			{
-				MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
 	            if (GetSignalUp(crtdr, rsi, trend))
 	            {
 					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
 	           		Log("!!!LONG !!! Attempting to buy {0}", numLots);
 					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
+					//MyPortfolioData["CRTDR"] = crtdr;
 	                buyOrder.Send(numLots);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
@@ -134,16 +135,21 @@ namespace PowerLanguage.Strategy {
 			{
 				// LONG
 				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
-	            
-				if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
+				
+				// close non-profitable positions straight away because we need to have picked a loser and need to free up money for new deals
+				if(CurrentPosition.OpenProfit < 0)
+				{
+					GenerateExitOnClose();
+				}
+				else if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
 				{
 	           		Log("!!!SELL1!!!");
-					sellOrder.Send();
+					sellOrder.Send("SELL1");
 				}
 				else if(rsi > (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat)))
 				{
 	           		Log("!!!SELL2!!!", Bars.TimeValue);
-					sellOrder.Send();
+					sellOrder.Send("SELL2");
 				}
 			}
 //			else if(StrategyInfo.MarketPosition < 0)

@@ -7,6 +7,7 @@ namespace PowerLanguage
 {
 	namespace Function
 	{
+		// https://thesystematictrader.com/2013/04/22/coding-lars-kestners-k-ratio-in-excel/
 		public sealed class K_RatioMath : FunctionSimple<System.Double>
 		{
 			public K_RatioMath(CStudyControl _master) : base(_master) {  }
@@ -114,7 +115,7 @@ namespace PowerLanguage
 				{ // Ignore the Calendar Year Calculation
 					// 2003
 					if (StandardErrB1 != 0){ 
-						KRatio = slope /(StandardErrB1 * n);
+						KRatio = slope / (StandardErrB1 * n);
 					}
 				}
 				else if (NumberOfDataBarsInCalendarYear == 1)

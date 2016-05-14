@@ -38,7 +38,7 @@ namespace PowerLanguage.Strategy
                 ExecControl.Abort("Signal can be applied in portfolio only.");
 			}
 			
-            m_KRatio.NumberOfDataBarsInCalendarYear = 1;
+            m_KRatio.NumberOfDataBarsInCalendarYear = 252;
         }
 
 		[Input]
@@ -78,6 +78,16 @@ namespace PowerLanguage.Strategy
 	                }
 	            }
 
+				double changeInMoney = 0.0;
+				var strategyIdxs = new List<int>();
+				this.StrategiesInPosition(ref strategyIdxs);
+	            foreach (var strategyIdx in strategyIdxs)
+	            {
+					changeInMoney += -Math.Min(0, PortfolioStrategies[strategyIdx].Signals[0].CurrentPosition.OpenProfit);
+	            }
+				
+				Log("Money likely to come in due to sells", changeInMoney.ToString());
+
 	 			//var rsi = cutlersRSIIndicatorMath.CalcNextValue(numberOfEntries);
 				
 	            // risk management says: Do not buy in case of two many entry signals, markets seem to be bumpy
@@ -88,7 +98,9 @@ namespace PowerLanguage.Strategy
 	            {
 					strategy.AllowEntriesShort = allowShort;
 					strategy.AllowEntriesLong = allowLong;
-	                strategy.EntryContracts = (int)((double)(this.InitialCapital + (DoReinvestment ? this.Portfolio.NetProfit : 0.0) - this.Portfolio.InvestedCapital) / 100.0 * Portfolio.MaxRiskEquityPerPosPercent / Math.Abs(strategy.Signals[0].Bars.CloseValue));
+					//var crtdr = (double)strategy.PortfolioData["CRTDR"];
+					Log("({0} + {1} - {2}) / 100.0 * {3} / {4} / {5}", InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, numberOfEntries, Math.Abs(strategy.Signals[0].Bars.CloseValue));
+	                strategy.EntryContracts = (int)((double)(InitialCapital + changeInMoney + (DoReinvestment ? Portfolio.NetProfit : 0.0) - Portfolio.InvestedCapital) / 100.0 * Portfolio.MaxRiskEquityPerPosPercent / numberOfEntries / Math.Abs(strategy.Signals[0].Bars.CloseValue));
 					if(strategy.EntryContracts == 0)
 						Log(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
 	            }
