@@ -13,6 +13,9 @@ namespace PowerLanguage.Strategy {
         private IOrderMarket buyToCoverOrder;
         
         [Input]
+        public int RsiUpMinimumForShort {get; set;}
+        
+        [Input]
         public int EmaLong {get; set;}
         
         [Input]
@@ -91,7 +94,7 @@ namespace PowerLanguage.Strategy {
         
 		private void Log(string message, params object[] parameters)
 		{
-			//if(!Environment.Optimizing) Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
+			if(!Environment.Optimizing) Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
 		}
 		
         protected override void CalcBar(){
@@ -110,14 +113,16 @@ namespace PowerLanguage.Strategy {
 			
        		Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value);
 			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
-			if(StrategyInfo.MarketPosition == 0)
+			MyPortfolioData["CRTDR"] = crtdr;
+			MyPortfolioData["EXIT"] = false;
+			var marketPosition = GetMarketPosition();
+			if(marketPosition == 0)
 			{
 	            if (GetSignalUp(crtdr, rsi, trend))
 	            {
 					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
 	           		Log("!!!LONG !!! Attempting to buy {0}", numLots);
 					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
-					//MyPortfolioData["CRTDR"] = crtdr;
 	                buyOrder.Send(numLots);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
@@ -128,34 +133,41 @@ namespace PowerLanguage.Strategy {
 //	            }
 				else
 				{
-	           		Log("--- NOP ---");
+	           		Log("--- NOPOS - NOP ---");
 				}
 			}
-			else if(StrategyInfo.MarketPosition > 0)
+			else if(marketPosition > 0)
 			{
 				// LONG
-				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
+				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(marketPosition) * StopLossLevel);
 				
 				// close non-profitable positions straight away because we need to have picked a loser and need to free up money for new deals
 				if(CurrentPosition.OpenProfit < 0)
 				{
 					GenerateExitOnClose();
+					MyPortfolioData["EXIT"] = true;
 				}
 				else if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
 				{
 	           		Log("!!!SELL1!!!");
 					sellOrder.Send("SELL1");
+					MyPortfolioData["EXIT"] = true;
 				}
 				else if(rsi > (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat)))
 				{
 	           		Log("!!!SELL2!!!", Bars.TimeValue);
 					sellOrder.Send("SELL2");
+					MyPortfolioData["EXIT"] = true;
+				}
+				else
+				{
+	           		Log("--- !POS! - NOP ---");
 				}
 			}
-//			else if(StrategyInfo.MarketPosition < 0)
+//			else if(marketPosition < 0)
 //			{
 //				// SHORT
-//				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
+//				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(marketPosition) * StopLossLevel);
 //				
 //				if(this.BarsSinceEntry() > 2 && !GetSignalDown(crtdr, rsi, trend))
 //				{
@@ -179,41 +191,43 @@ namespace PowerLanguage.Strategy {
 		
 		private Trend GetTrend()
 		{
-            if (xAverageLong.Value > xAverageShort.Value && xAverageShort.Value > Bars.CloseValue)
-            {
-				return Trend.Down;
-            }
-            else if(Bars.CloseValue > xAverageLong.Value && xAverageLong.Value < xAverageShort.Value)
+            if(Bars.CloseValue > xAverageLong.Value && xAverageLong.Value < xAverageShort.Value)
             {
 				return Trend.Up;
+            }
+            else if (xAverageLong.Value > xAverageShort.Value && xAverageShort.Value > Bars.CloseValue)
+            {
+				return Trend.Down;
             }
 			else return Trend.Flat;
 		}
 		
         private bool GetSignalUp(double crtdr, double rsi, Trend trend)
         {
-			if(rsi < 40)
+			if(trend == Trend.Up)
 			{
-				if(trend == Trend.Up)
-				{
-					if(crtdr * 100 + rsi <= LongLimitUp) return true;
-				}
-				else if(trend == Trend.Down)
-				{
-					if(crtdr * 100 + rsi <= LongLimitDown) return true;
-				}
-				else
-				{
-					if(crtdr * 100 + rsi <= LongLimitFlat) return true;
-				}
+				if(crtdr * 100 + rsi <= LongLimitUp) return true;
+			}
+			else if(trend == Trend.Down)
+			{
+				if(crtdr * 100 + rsi <= LongLimitDown) return true;
+			}
+			else
+			{
+				if(crtdr * 100 + rsi <= LongLimitFlat) return true;
 			}
 			
 			return false;
 		}
 		
+		private double GetMarketPosition()
+		{
+			return this.Environment.IsAutoTradingMode ? StrategyInfo.MarketPositionAtBrokerForTheStrategy : StrategyInfo.MarketPosition;
+		}
+		
         private bool GetSignalDown(double crtdr, double rsi, Trend trend)
         {
-			if(rsi > 60 && trend == Trend.Down)
+			if(rsi >= RsiUpMinimumForShort && trend == Trend.Down)
 			{
 				if(crtdr * 100 + rsi >= 200 - ShortLimitDown) return true;
 			}
@@ -221,9 +235,14 @@ namespace PowerLanguage.Strategy {
 			return false;
 		}
 		
+		protected override void OnBrokerStategyOrderFilled(bool isBuy, int quantity, double avgFillPrice)
+		{
+			Log("Order filled. Is buy: {0} quantity: {1}, avg. fill price: {2}. MarketPositionAtBroker={3}, AvgEntryPriceAtBroker={4}, MarketPositionAtBrokerForTheStrategy={5}, AvgEntryPriceAtBrokerForTheStrategy={6}, MarketPosition={7}, AvgEntryPrice={8}", isBuy ? "TRUE" : "FALSE", quantity, avgFillPrice, StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
+		}
+		
 		protected override void OnBrokerPositionChange()
 		{
-			Log("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker);
+			Log("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}, MarketPositionAtBrokerForTheStrategy={2}, AvgEntryPriceAtBrokerForTheStrategy={3}, MarketPosition={4}, AvgEntryPrice={5}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
 		}
 	}
 }
