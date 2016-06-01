@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Text;
 using PowerLanguage.Function;
 using ATCenterProxy.interop;
 
@@ -9,11 +11,11 @@ namespace PowerLanguage.Strategy {
         public CRTDR_Signal(object _ctx):base(_ctx){}
         private IOrderMarket buyOrder;
         private IOrderMarket sellOrder;
-        private IOrderMarket sellShortOrder;
-        private IOrderMarket buyToCoverOrder;
+//        private IOrderMarket sellShortOrder;
+//        private IOrderMarket buyToCoverOrder;
         
-        [Input]
-        public int RsiUpMinimumForShort {get; set;}
+//        [Input]
+//        public int RsiUpMinimumForShort {get; set;}
         
         [Input]
         public int EmaLong {get; set;}
@@ -39,8 +41,8 @@ namespace PowerLanguage.Strategy {
         [Input]
         public double LongLimitFlat {get; set;}
         
-        [Input]
-        public double ShortLimitDown {get; set;}
+//        [Input]
+//        public double ShortLimitDown {get; set;}
         
         [Input]
         public double StopLossLevel {get; set;}
@@ -54,14 +56,14 @@ namespace PowerLanguage.Strategy {
         [Input]
         public double RsiSellLevelFlat {get; set;}
         
-        [Input]
-        public double RsiCoverLevelUp {get; set;}
+//        [Input]
+//        public double RsiCoverLevelUp {get; set;}
         
-        [Input]
-        public double RsiCoverLevelDown {get; set;}
+//        [Input]
+//        public double RsiCoverLevelDown {get; set;}
         
-        [Input]
-        public double RsiCoverLevelFlat {get; set;}
+//        [Input]
+ //       public double RsiCoverLevelFlat {get; set;}
         
 		private CutlersRSIIndicatorMath cutlersRSIIndicatorMathDown;
 		private CutlersRSIIndicatorMath cutlersRSIIndicatorMathFlat;
@@ -73,8 +75,8 @@ namespace PowerLanguage.Strategy {
         protected override void Create() {
             buyOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.UserSpecified, EOrderAction.Buy));
             sellOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.Default, "RSI LE", EOrderAction.Sell, OrderExit.FromAll));
-            sellShortOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.UserSpecified, EOrderAction.SellShort));
-            buyToCoverOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.Default, "RSI SE", EOrderAction.BuyToCover, OrderExit.FromAll));
+            //sellShortOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.UserSpecified, EOrderAction.SellShort));
+            //buyToCoverOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.Default, "RSI SE", EOrderAction.BuyToCover, OrderExit.FromAll));
             cutlersRSIIndicatorMathDown = new CutlersRSIIndicatorMath(this, 1);
             cutlersRSIIndicatorMathFlat = new CutlersRSIIndicatorMath(this, 1);
             cutlersRSIIndicatorMathUp = new CutlersRSIIndicatorMath(this, 1);
@@ -83,6 +85,9 @@ namespace PowerLanguage.Strategy {
         }
         
         protected override void StartCalc() {
+			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
+			MyPortfolioData["CRTDR"] = 1;
+			MyPortfolioData["EXIT"] = false;
 			cutlersRSIIndicatorMathDown.Length = RsiLengthDown;
 			cutlersRSIIndicatorMathFlat.Length = RsiLengthFlat;
 			cutlersRSIIndicatorMathUp.Length = RsiLengthUp;
@@ -91,13 +96,41 @@ namespace PowerLanguage.Strategy {
             xAverageShort.Price = Bars.Close;
 			xAverageShort.Length = EmaShort;
         }
+		
+		protected override void StopCalc()
+		{
+			DumpLog();
+		}
         
+		private StringBuilder logStringBuilder = new StringBuilder();
+		
 		private void Log(string message, params object[] parameters)
 		{
-			if(!Environment.Optimizing) Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
+			if(!Environment.Optimizing)
+			{
+				var str = string.Format("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
+				
+				if(Environment.IsRealTimeCalc)
+				{
+					logStringBuilder.AppendLine(str);
+					if(logStringBuilder.Length >= 1000000)
+					{
+						DumpLog();
+					}
+				}
+				
+				Output.WriteLine(str);
+			}
+		}
+		
+		private void DumpLog()
+		{
+			File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", logStringBuilder.ToString()); 
+			logStringBuilder.Length = 0;
 		}
 		
         protected override void CalcBar(){
+			Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
             var rsiDown = cutlersRSIIndicatorMathDown.CalcNextValue(Bars.CloseValue);
             var rsiFlat = cutlersRSIIndicatorMathFlat.CalcNextValue(Bars.CloseValue);
             var rsiUp = cutlersRSIIndicatorMathUp.CalcNextValue(Bars.CloseValue);
@@ -115,7 +148,7 @@ namespace PowerLanguage.Strategy {
 			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
 			MyPortfolioData["CRTDR"] = crtdr;
 			MyPortfolioData["EXIT"] = false;
-			var marketPosition = GetMarketPosition();
+			var marketPosition = StrategyInfo.MarketPosition;
 			if(marketPosition == 0)
 			{
 	            if (GetSignalUp(crtdr, rsi, trend))
@@ -133,17 +166,18 @@ namespace PowerLanguage.Strategy {
 //	            }
 				else
 				{
-	           		Log("--- NOPOS - NOP ---");
+	           		Log("---  FLAT - NOP ---");
 				}
 			}
 			else if(marketPosition > 0)
 			{
-				// LONG
+				// WE ARE LONG
 				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(marketPosition) * StopLossLevel);
 				
 				// close non-profitable positions straight away because we need to have picked a loser and need to free up money for new deals
 				if(CurrentPosition.OpenProfit < 0)
 				{
+	           		Log("!!!CLOSE!!!");
 					GenerateExitOnClose();
 					MyPortfolioData["EXIT"] = true;
 				}
@@ -161,12 +195,12 @@ namespace PowerLanguage.Strategy {
 				}
 				else
 				{
-	           		Log("--- !POS! - NOP ---");
+	           		Log("---  LONG - NOP ---");
 				}
 			}
 //			else if(marketPosition < 0)
 //			{
-//				// SHORT
+//				// WE ARE SHORT
 //				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(marketPosition) * StopLossLevel);
 //				
 //				if(this.BarsSinceEntry() > 2 && !GetSignalDown(crtdr, rsi, trend))
@@ -178,6 +212,10 @@ namespace PowerLanguage.Strategy {
 //				{
 //	           		//Output.WriteLine("{8}: COVER2 on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value, Bars.Info.Name);
 //					buyToCoverOrder.Send();
+//				}
+//				else
+//				{
+//	           		Log("--- SHORT - NOP ---");
 //				}
 //			}
         }
@@ -220,20 +258,20 @@ namespace PowerLanguage.Strategy {
 			return false;
 		}
 		
-		private double GetMarketPosition()
-		{
-			return this.Environment.IsAutoTradingMode ? StrategyInfo.MarketPositionAtBrokerForTheStrategy : StrategyInfo.MarketPosition;
-		}
+//		private double GetMarketPosition()
+//		{
+//			return this.Environment.IsAutoTradingMode ? StrategyInfo.MarketPositionAtBrokerForTheStrategy : StrategyInfo.MarketPosition;
+//		}
 		
-        private bool GetSignalDown(double crtdr, double rsi, Trend trend)
-        {
-			if(rsi >= RsiUpMinimumForShort && trend == Trend.Down)
-			{
-				if(crtdr * 100 + rsi >= 200 - ShortLimitDown) return true;
-			}
-            
-			return false;
-		}
+//        private bool GetSignalDown(double crtdr, double rsi, Trend trend)
+//        {
+//			if(rsi >= RsiUpMinimumForShort && trend == Trend.Down)
+//			{
+//				if(crtdr * 100 + rsi >= 200 - ShortLimitDown) return true;
+//			}
+//            
+//			return false;
+//		}
 		
 		protected override void OnBrokerStategyOrderFilled(bool isBuy, int quantity, double avgFillPrice)
 		{

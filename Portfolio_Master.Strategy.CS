@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Text;
 using PowerLanguage.Function;
 using ATCenterProxy.interop;
 
@@ -40,13 +42,40 @@ namespace PowerLanguage.Strategy
 			
             m_KRatio.NumberOfDataBarsInCalendarYear = 252;
         }
+		
+		protected override void StopCalc()
+		{
+			DumpLog();
+		}
 
 		[Input]
 		public bool DoReinvestment { get; set; }
 		
+		private StringBuilder logStringBuilder = new StringBuilder();
+		
 		private void Log(string message, params object[] parameters)
 		{
-			if(!Environment.Optimizing) Output.WriteLine("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", "MONEY MGMT", string.Format(message, parameters));
+			if(!Environment.Optimizing)
+			{
+				var str = string.Format("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", "MONEY MGMT", string.Format(message, parameters));
+				
+				if(Environment.IsRealTimeCalc)
+				{
+					logStringBuilder.AppendLine(str);
+					if(logStringBuilder.Length >= 1000000)
+					{
+						DumpLog();
+					}
+				}
+				
+				Output.WriteLine(str);
+			}
+		}
+		
+		private void DumpLog()
+		{
+			File.AppendAllText(@"c:\temp\logs\_MoneyManagement.txt", logStringBuilder.ToString()); 
+			logStringBuilder.Length = 0;
 		}
 		
         protected override void CalcBar()
@@ -111,11 +140,12 @@ namespace PowerLanguage.Strategy
 						// do not reinvest potential profits, cap @ InitialCapital
 						availableCash = Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital);
 					}
+					
 					var cashToInvest = availableCash / 100.0 * Portfolio.MaxRiskEquityPerPosPercent * (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR));
 					sumInvested += cashToInvest;
 					var possibleEntryPrice = Math.Abs(strategy.Signals[0].Bars.CloseValue);
 	                strategy.EntryContracts = (int)(cashToInvest / possibleEntryPrice);
-					Log("({0} + {1} - {2}) / 100.0 * {3} * {4} = {5}$ --> {6}# @ assumed price {7}$", InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice);
+					Log("({0}: {1} + {2} - {3}) / 100.0 * {4} * {5} = {6}$ --> {7}# @ assumed price {8}$", strategy.Signals[0].Bars.Info.Name, InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice);
 	                //strategy.EntryContracts = (int)((double)(InitialCapital + changeInMoney + (DoReinvestment ? Portfolio.NetProfit : 0.0) - Portfolio.InvestedCapital) / 100.0 * Portfolio.MaxRiskEquityPerPosPercent / numberOfEntries / Math.Abs(strategy.Signals[0].Bars.CloseValue));
 					if(strategy.EntryContracts == 0)
 						Log(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
