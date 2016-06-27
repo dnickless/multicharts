@@ -323,6 +323,10 @@
     <Compile Include="K_Ratio.Indicator.CS" />
     <Compile Include="Slope.Function.CS" />
     <Compile Include="Slope.Strategy.CS" />
+    <Compile Include="XAverageThatWorks.Function.CS" />
+    <Compile Include="Test.Strategy.CS" />
+    <Compile Include="DipTrader.Strategy.CS" />
+    <Compile Include="Portfolio_KRatioOptimization.Strategy.CS" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

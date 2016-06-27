@@ -45,6 +45,7 @@ namespace PowerLanguage.Strategy
 		
 		protected override void StopCalc()
 		{
+			Output.WriteLine("Dumping Money Management Signal log");
 			DumpLog();
 		}
 
@@ -68,7 +69,7 @@ namespace PowerLanguage.Strategy
 					}
 				}
 				
-				Output.WriteLine(str);
+				//Output.WriteLine(str);
 			}
 		}
 		

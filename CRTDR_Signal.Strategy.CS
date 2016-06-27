@@ -68,8 +68,8 @@ namespace PowerLanguage.Strategy {
 		private CutlersRSIIndicatorMath cutlersRSIIndicatorMathDown;
 		private CutlersRSIIndicatorMath cutlersRSIIndicatorMathFlat;
 		private CutlersRSIIndicatorMath cutlersRSIIndicatorMathUp;
-        private XAverage xAverageLong;
-        private XAverage xAverageShort;
+        private XAverageThatWorks xAverageLong;
+        private XAverageThatWorks xAverageShort;
 		private bool doReinvestment = false;
         
         protected override void Create() {
@@ -80,8 +80,8 @@ namespace PowerLanguage.Strategy {
             cutlersRSIIndicatorMathDown = new CutlersRSIIndicatorMath(this, 1);
             cutlersRSIIndicatorMathFlat = new CutlersRSIIndicatorMath(this, 1);
             cutlersRSIIndicatorMathUp = new CutlersRSIIndicatorMath(this, 1);
-            xAverageLong = new XAverage(this, 1);
-            xAverageShort = new XAverage(this, 1);
+            xAverageLong = new XAverageThatWorks(this, 1);
+            xAverageShort = new XAverageThatWorks(this, 1);
         }
         
         protected override void StartCalc() {
@@ -99,6 +99,7 @@ namespace PowerLanguage.Strategy {
 		
 		protected override void StopCalc()
 		{
+			Output.WriteLine("Dumping log for {0}", Bars.Info.Name);
 			DumpLog();
 		}
         
@@ -123,14 +124,51 @@ namespace PowerLanguage.Strategy {
 			}
 		}
 		
+        // http://www.tradingcode.net/multicharts-net/trading-strategies/exit-strategy-position-prior-close/
+        private bool TimeToEnter()
+        {
+            // On real-time data, we use DateTime.Now
+            // Else, when backtesting, use the bar time
+            return (Environment.IsRealTimeCalc ? DateTime.Now : Bars.TimeValue).TimeOfDay >= closeTime;
+        }
+        
 		private void DumpLog()
 		{
 			File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", logStringBuilder.ToString()); 
 			logStringBuilder.Length = 0;
 		}
 		
+		private TimeSpan closeTime = new TimeSpan(15, 54, 48);
+		private bool executedInThisBar;
+		
         protected override void CalcBar(){
-			Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
+//            System.Diagnostics.Debugger.Launch();
+			var timeToEnter = TimeToEnter();
+			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(10));
+
+//            if (this.Bars.Info.Name == "AAPL") Output.WriteLine("{0}, {1}, {2}, {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
+
+  			if(!timeToEnter)
+ 			{
+				Log("Not yet TimeToEnter() {0} executedInThisBar {1}", timeToEnter, executedInThisBar);
+ 				executedInThisBar = false;
+ 				return;
+ 			}
+  			
+  			if(Environment.IsRealTimeCalc && executedInThisBar)
+ 			{
+				return;
+			}
+			
+//            if(!Environment.IsRealTimeCalc && Bars.TimeValue.Date.Equals(DateTime.Now.Date))
+//			{
+//				Log("That situation happened indeed");
+//                return;
+//			}
+            
+			executedInThisBar = true;
+						
+			//Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
             var rsiDown = cutlersRSIIndicatorMathDown.CalcNextValue(Bars.CloseValue);
             var rsiFlat = cutlersRSIIndicatorMathFlat.CalcNextValue(Bars.CloseValue);
             var rsiUp = cutlersRSIIndicatorMathUp.CalcNextValue(Bars.CloseValue);
@@ -141,10 +179,13 @@ namespace PowerLanguage.Strategy {
             
             var crtdr = CRTDRIndicatorMath.CalcNextValue(high, low, close);
 			
-			var trend = GetTrend();
+			var xAverageLongValue = xAverageLong.Value;
+			var xAverageShortValue = xAverageShort.Value;
+			
+			var trend = GetTrend(close, xAverageLongValue, xAverageShortValue);
 			var rsi = trend == Trend.Down ? rsiDown : (trend == Trend.Up ? rsiUp : rsiFlat);
 			
-       		Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value);
+       		Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLongValue, xAverageShortValue);
 			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
 			MyPortfolioData["CRTDR"] = crtdr;
 			MyPortfolioData["EXIT"] = false;
@@ -154,19 +195,19 @@ namespace PowerLanguage.Strategy {
 	            if (GetSignalUp(crtdr, rsi, trend))
 	            {
 					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
-	           		Log("!!!LONG !!! Attempting to buy {0}", numLots);
+	           		//Log("!!!LONG !!! Attempting to buy {0}", numLots);
 					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
 	                buyOrder.Send(numLots);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
 //	            {
-//	           		Output.WriteLine("SHORT on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value);
+//	           		Output.WriteLine("SHORT on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLongValue, xAverageShortValue);
 //					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = -Bars.CloseValue;
 //					sellShortOrder.Send(Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / 10.0 / Bars.CloseValue));
 //	            }
 				else
 				{
-	           		Log("---  FLAT - NOP ---");
+	           		//Log("---  FLAT - NOP ---");
 				}
 			}
 			else if(marketPosition > 0)
@@ -177,25 +218,25 @@ namespace PowerLanguage.Strategy {
 				// close non-profitable positions straight away because we need to have picked a loser and need to free up money for new deals
 				if(CurrentPosition.OpenProfit < 0)
 				{
-	           		Log("!!!CLOSE!!!");
+	           		//Log("!!!CLOSE!!!");
 					GenerateExitOnClose();
 					MyPortfolioData["EXIT"] = true;
 				}
 				else if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
 				{
-	           		Log("!!!SELL1!!!");
+	           		//Log("!!!SELL1!!!");
 					sellOrder.Send("SELL1");
 					MyPortfolioData["EXIT"] = true;
 				}
 				else if(rsi > (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat)))
 				{
-	           		Log("!!!SELL2!!!", Bars.TimeValue);
+	           		//Log("!!!SELL2!!!", Bars.TimeValue);
 					sellOrder.Send("SELL2");
 					MyPortfolioData["EXIT"] = true;
 				}
 				else
 				{
-	           		Log("---  LONG - NOP ---");
+	           		//Log("---  LONG - NOP ---");
 				}
 			}
 //			else if(marketPosition < 0)
@@ -205,12 +246,12 @@ namespace PowerLanguage.Strategy {
 //				
 //				if(this.BarsSinceEntry() > 2 && !GetSignalDown(crtdr, rsi, trend))
 //				{
-//	           		//Output.WriteLine("{8}: COVER1 on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value, Bars.Info.Name);
+//	           		//Output.WriteLine("{8}: COVER1 on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLongValue, xAverageShortValue, Bars.Info.Name);
 //					buyToCoverOrder.Send();
 //				}
 //				else if(rsi < (trend == Trend.Down ? RsiCoverLevelDown : (trend == Trend.Up ? RsiCoverLevelUp : RsiCoverLevelFlat)))
 //				{
-//	           		//Output.WriteLine("{8}: COVER2 on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLong.Value, xAverageShort.Value, Bars.Info.Name);
+//	           		//Output.WriteLine("{8}: COVER2 on {0}, high {1} low {2} close {3} rsi {4} crtdr {5} xAverageLong {6} xAverageShort {7}", Bars.TimeValue, high, low, close, rsi, crtdr, xAverageLongValue, xAverageShortValue, Bars.Info.Name);
 //					buyToCoverOrder.Send();
 //				}
 //				else
@@ -227,13 +268,13 @@ namespace PowerLanguage.Strategy {
 			Flat = 0
 		}
 		
-		private Trend GetTrend()
+		private Trend GetTrend(double close, double xAverageLongValue, double xAverageShortValue)
 		{
-            if(Bars.CloseValue > xAverageLong.Value && xAverageLong.Value < xAverageShort.Value)
+            if(close > xAverageLongValue && xAverageLongValue < xAverageShortValue)
             {
 				return Trend.Up;
             }
-            else if (xAverageLong.Value > xAverageShort.Value && xAverageShort.Value > Bars.CloseValue)
+            else if (xAverageLongValue > xAverageShortValue && xAverageShortValue > close)
             {
 				return Trend.Down;
             }
@@ -282,5 +323,11 @@ namespace PowerLanguage.Strategy {
 		{
 			Log("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}, MarketPositionAtBrokerForTheStrategy={2}, AvgEntryPriceAtBrokerForTheStrategy={3}, MarketPosition={4}, AvgEntryPrice={5}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
 		}
+		
+        // Recalculate the last bar when performing the recalculation
+        protected override void OnRecalcLastBarAfterEvent()
+        {
+            CalcBar();
+        }
 	}
 }

@@ -83,7 +83,6 @@ namespace PowerLanguage
 				}
 				
 				double slope = (SumXY -(SumX * SumY) / n) / (SumXSqR - (SumX * SumX) / n);
-				return slope;
 				
 				double Beta0 = (SumY / n) - slope * (SumX / n);
 				
