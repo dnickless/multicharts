@@ -17,6 +17,9 @@ namespace PowerLanguage.Strategy
 		[Input]
         public int MaxNumberOfEntriesPerDayLongLimit { get; set; }
 
+		[Input]
+        public double SkalpingFactor { get; set; }
+
 		//CutlersRSIIndicatorMath cutlersRSIIndicatorMath;
 		private K_RatioMath m_KRatio;
 		
@@ -25,6 +28,7 @@ namespace PowerLanguage.Strategy
         {
             MaxNumberOfEntriesPerDayShortLimit = 2;
             MaxNumberOfEntriesPerDayLongLimit = 5;
+			SkalpingFactor = 1.1;
         }
 
         protected override void Create()
@@ -40,13 +44,16 @@ namespace PowerLanguage.Strategy
                 ExecControl.Abort("Signal can be applied in portfolio only.");
 			}
 			
-            m_KRatio.NumberOfDataBarsInCalendarYear = 252;
+            m_KRatio.NumberOfDataBarsInCalendarYear = 1; //252;
         }
 		
 		protected override void StopCalc()
 		{
-			Output.WriteLine("Dumping Money Management Signal log");
-			DumpLog();
+			if(!Environment.Optimizing)
+			{
+				Output.WriteLine("Dumping Money Management Signal log");
+				DumpLog();
+			}
 		}
 
 		[Input]
@@ -69,7 +76,7 @@ namespace PowerLanguage.Strategy
 					}
 				}
 				
-				//Output.WriteLine(str);
+				Output.WriteLine(str);
 			}
 		}
 		
@@ -99,15 +106,19 @@ namespace PowerLanguage.Strategy
 
 				double sumCRTDR = 0.0;
 				double changeInMoney = 0.0;
+				var crtdrs = new List<double>();
 				
 	            // let's make the most out of our available cash
+				// loop through all symbols to calculate sum of all CRTDR values for pro-rata cash distribution
 	            foreach (var strategy in PortfolioStrategies)
 	            {
 	                if ((strategy.PortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] as double?) != null)
 	                {
 	                    listOfStrategiesWithOrders.Add(strategy);
 	                    numberOfEntries++;
-						sumCRTDR += (1.0 - (double)strategy.PortfolioData["CRTDR"]);
+						var crtdr = (double)strategy.PortfolioData["CRTDR"];
+						crtdrs.Add(crtdr);
+						sumCRTDR += (1.0 - crtdr);
 	                }
 					
 					var exit = strategy.PortfolioData["EXIT"] as bool?;
@@ -118,6 +129,33 @@ namespace PowerLanguage.Strategy
 	            }
 				
 				Log("Money likely to come in due to sells: {0}", changeInMoney);
+				
+				// let's only trade the triggering symbols that are "above" average in terms of the CRTDR criteria
+				if(numberOfEntries != 0)
+				{
+					var average = crtdrs.Average();
+					var sumOfSquaresOfDifferences = crtdrs.Sum(val => (val - average) * (val - average));
+					var stdDev = Math.Sqrt(sumOfSquaresOfDifferences / crtdrs.Count);
+					
+					var meanCRTDR = sumCRTDR / (double)numberOfEntries;
+			        foreach (var strategy in PortfolioStrategies)
+			        {
+		                if ((strategy.PortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] as double?) != null)
+						{
+				            var crtdr = (double)strategy.PortfolioData["CRTDR"];
+							if(1.0 - crtdr < meanCRTDR + stdDev * SkalpingFactor)
+				            {
+								strategy.AllowEntriesLong = false;
+								// adjust previously calculated values
+				                listOfStrategiesWithOrders.Remove(strategy);
+								Log("Removing {0}", crtdr);
+								//strategy.EntryContracts = 0;
+				                numberOfEntries--;
+				                sumCRTDR -= (1.0 - crtdr);
+				            }
+						}
+			        }
+				}
 
 	 			//var rsi = cutlersRSIIndicatorMath.CalcNextValue(numberOfEntries);
 				
@@ -131,6 +169,7 @@ namespace PowerLanguage.Strategy
 					strategy.AllowEntriesShort = allowShort;
 					strategy.AllowEntriesLong = allowLong;
 					var crtdr = (double)strategy.PortfolioData["CRTDR"];
+					Log("Buying {0}", crtdr);
 					double availableCash = 0.0;
 					if(DoReinvestment)
 					{
@@ -146,7 +185,7 @@ namespace PowerLanguage.Strategy
 					sumInvested += cashToInvest;
 					var possibleEntryPrice = Math.Abs(strategy.Signals[0].Bars.CloseValue);
 	                strategy.EntryContracts = (int)(cashToInvest / possibleEntryPrice);
-					Log("({0}: {1} + {2} - {3}) / 100.0 * {4} * {5} = {6}$ --> {7}# @ assumed price {8}$", strategy.Signals[0].Bars.Info.Name, InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice);
+					Log("({0}: {1} + {2} - {3}) / 100.0 * {4} * {5} = {6}$ --> {7}# @ assumed price {8}$ --- available cash: {9}", strategy.Signals[0].Bars.Info.Name, InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash);
 	                //strategy.EntryContracts = (int)((double)(InitialCapital + changeInMoney + (DoReinvestment ? Portfolio.NetProfit : 0.0) - Portfolio.InvestedCapital) / 100.0 * Portfolio.MaxRiskEquityPerPosPercent / numberOfEntries / Math.Abs(strategy.Signals[0].Bars.CloseValue));
 					if(strategy.EntryContracts == 0)
 						Log(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");

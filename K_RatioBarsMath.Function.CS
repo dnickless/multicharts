@@ -64,9 +64,10 @@ namespace PowerLanguage
 					
 					for (int i = 1; i <= n; i++)
 					{
-						SumXY += i * Price[n - i];
+						var price = Price[n - i];
+						SumXY += i * price;
 						SumX += i;
-						SumY += Price[n - i];
+						SumY += price;
 						SumXSqR += i * i;
 					}
 					

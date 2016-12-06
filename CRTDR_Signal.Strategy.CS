@@ -99,8 +99,11 @@ namespace PowerLanguage.Strategy {
 		
 		protected override void StopCalc()
 		{
-			Output.WriteLine("Dumping log for {0}", Bars.Info.Name);
-			DumpLog();
+			if(!Environment.Optimizing)
+			{
+				Output.WriteLine("Dumping log for {0}", Bars.Info.Name);
+				DumpLog();
+			}
 		}
         
 		private StringBuilder logStringBuilder = new StringBuilder();
@@ -120,7 +123,7 @@ namespace PowerLanguage.Strategy {
 					}
 				}
 				
-				Output.WriteLine(str);
+				//Output.WriteLine(str);
 			}
 		}
 		
@@ -144,7 +147,7 @@ namespace PowerLanguage.Strategy {
         protected override void CalcBar(){
 //            System.Diagnostics.Debugger.Launch();
 			var timeToEnter = TimeToEnter();
-			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(10));
+			//ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(10));
 
 //            if (this.Bars.Info.Name == "AAPL") Output.WriteLine("{0}, {1}, {2}, {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
 
@@ -215,22 +218,22 @@ namespace PowerLanguage.Strategy {
 				// WE ARE LONG
 				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(marketPosition) * StopLossLevel);
 				
-				// close non-profitable positions straight away because we need to have picked a loser and need to free up money for new deals
+				// close non-profitable positions straight away because we have picked a loser and need to free up money for new deals
 				if(CurrentPosition.OpenProfit < 0)
 				{
-	           		//Log("!!!CLOSE!!!");
+	           		Log("!!!CLOSE!!!");
 					GenerateExitOnClose();
 					MyPortfolioData["EXIT"] = true;
 				}
 				else if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
 				{
-	           		//Log("!!!SELL1!!!");
+	           		Log("!!!SELL1!!!");
 					sellOrder.Send("SELL1");
 					MyPortfolioData["EXIT"] = true;
 				}
 				else if(rsi > (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat)))
 				{
-	           		//Log("!!!SELL2!!!", Bars.TimeValue);
+	           		Log("!!!SELL2!!!", Bars.TimeValue);
 					sellOrder.Send("SELL2");
 					MyPortfolioData["EXIT"] = true;
 				}
