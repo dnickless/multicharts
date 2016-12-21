@@ -2,6 +2,8 @@
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
 using PowerLanguage.Function;
 using ATCenterProxy.interop;
@@ -123,17 +125,17 @@ namespace PowerLanguage.Strategy {
 					}
 				}
 				
-				//Output.WriteLine(str);
+				Output.WriteLine(str);
 			}
 		}
 		
         // http://www.tradingcode.net/multicharts-net/trading-strategies/exit-strategy-position-prior-close/
-        private bool TimeToEnter()
-        {
-            // On real-time data, we use DateTime.Now
-            // Else, when backtesting, use the bar time
-            return (Environment.IsRealTimeCalc ? DateTime.Now : Bars.TimeValue).TimeOfDay >= closeTime;
-        }
+//        private bool TimeToEnter()
+//        {
+//            // On real-time data, we use DateTime.Now
+//            // Else, when backtesting, use the bar time
+//            return (Environment.IsRealTimeCalc ? DateTime.Now : Bars.TimeValue).TimeOfDay >= closeTime;
+//        }
         
 		private void DumpLog()
 		{
@@ -141,27 +143,38 @@ namespace PowerLanguage.Strategy {
 			logStringBuilder.Length = 0;
 		}
 		
-		private TimeSpan closeTime = new TimeSpan(15, 54, 48);
-		private bool executedInThisBar;
+//		private TimeSpan closeTime = new TimeSpan(14, 55, 48);
+//		private bool executedInThisBar;
+		
+//		bool lastBarWasHistorical = true;
 		
         protected override void CalcBar(){
 //            System.Diagnostics.Debugger.Launch();
-			var timeToEnter = TimeToEnter();
+//			var timeToEnter = TimeToEnter();
 			//ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(10));
 
-//            if (this.Bars.Info.Name == "AAPL") Output.WriteLine("{0}, {1}, {2}, {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
+            //if (this.Bars.Info.Name == "AAPL")
+				Log("{0}, {1}, {2}, {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
 
-  			if(!timeToEnter)
- 			{
-				Log("Not yet TimeToEnter() {0} executedInThisBar {1}", timeToEnter, executedInThisBar);
- 				executedInThisBar = false;
- 				return;
- 			}
+			
+//			Log("Executed in this bar: " + executedInThisBar);
+			
+//  			if(!timeToEnter)
+// 			{
+//				Log("Not yet TimeToEnter() {0} executedInThisBar {1}", timeToEnter, executedInThisBar);
+// 				executedInThisBar = false;
+// 				return;
+// 			}
   			
-  			if(Environment.IsRealTimeCalc && executedInThisBar)
- 			{
-				return;
-			}
+//  			if(Environment.IsRealTimeCalc)
+// 			{
+//				if(!lastBarWasHistorical && executedInThisBar)
+//				{
+//					return;
+//				}
+//				
+//				lastBarWasHistorical = false;
+//			}
 			
 //            if(!Environment.IsRealTimeCalc && Bars.TimeValue.Date.Equals(DateTime.Now.Date))
 //			{
@@ -169,9 +182,9 @@ namespace PowerLanguage.Strategy {
 //                return;
 //			}
             
-			executedInThisBar = true;
+//			executedInThisBar = true;
 						
-			//Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
+			Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
             var rsiDown = cutlersRSIIndicatorMathDown.CalcNextValue(Bars.CloseValue);
             var rsiFlat = cutlersRSIIndicatorMathFlat.CalcNextValue(Bars.CloseValue);
             var rsiUp = cutlersRSIIndicatorMathUp.CalcNextValue(Bars.CloseValue);
@@ -192,6 +205,7 @@ namespace PowerLanguage.Strategy {
 			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
 			MyPortfolioData["CRTDR"] = crtdr;
 			MyPortfolioData["EXIT"] = false;
+			
 			var marketPosition = StrategyInfo.MarketPosition;
 			if(marketPosition == 0)
 			{
@@ -200,6 +214,7 @@ namespace PowerLanguage.Strategy {
 					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
 	           		//Log("!!!LONG !!! Attempting to buy {0}", numLots);
 					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
+					LogAndMail("({0}: @ assumed price {1}$", Bars.Info.Name, Bars.CloseValue);
 	                buyOrder.Send(numLots);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
@@ -332,5 +347,44 @@ namespace PowerLanguage.Strategy {
         {
             CalcBar();
         }
-	}
+		
+		private static string fromPassword = System.IO.File.ReadAllText(@"C:\temp\do_not_delete\asdf.txt");
+		private static MailAddress fromAddress = new MailAddress("ramanddan.trading@gmail.com", "RamAndDan Trading");
+		private SmtpClient smtp = new SmtpClient
+		{
+			Host = "smtp.gmail.com",
+			Port = 587,
+			EnableSsl = true,
+			DeliveryMethod = SmtpDeliveryMethod.Network,
+			UseDefaultCredentials = false,
+			Credentials = new NetworkCredential(fromAddress.Address, fromPassword)
+		};
+		
+		private void LogAndMail(string message, params object[] parameters)
+		{
+			Log(message, parameters);
+			if(Environment.IsRealTimeCalc)
+			{
+				try
+				{
+					Log("sending email");
+					
+					using (var mailMessage = new MailMessage()
+					{
+						From = fromAddress,
+						Subject = "Order potentially executed... ;)",
+						Body = string.Format(message, parameters)
+					})
+					{
+						mailMessage.To.Add("ramon@winter-berg.com");
+						mailMessage.To.Add("daniel.hegener@gmx.net");
+						smtp.Send(mailMessage);
+					}
+				}
+				catch(Exception)
+				{
+				}
+			}
+		}
+ 	}
 }

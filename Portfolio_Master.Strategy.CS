@@ -185,8 +185,8 @@ namespace PowerLanguage.Strategy
 					sumInvested += cashToInvest;
 					var possibleEntryPrice = Math.Abs(strategy.Signals[0].Bars.CloseValue);
 	                strategy.EntryContracts = (int)(cashToInvest / possibleEntryPrice);
-					Log("({0}: {1} + {2} - {3}) / 100.0 * {4} * {5} = {6}$ --> {7}# @ assumed price {8}$ --- available cash: {9}", strategy.Signals[0].Bars.Info.Name, InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash);
 	                //strategy.EntryContracts = (int)((double)(InitialCapital + changeInMoney + (DoReinvestment ? Portfolio.NetProfit : 0.0) - Portfolio.InvestedCapital) / 100.0 * Portfolio.MaxRiskEquityPerPosPercent / numberOfEntries / Math.Abs(strategy.Signals[0].Bars.CloseValue));
+					Log("({0}: {1} + {2} - {3}) / 100.0 * {4} * {5} = {6}$ --> {7}# @ assumed price {8}$ --- available cash: {9}", strategy.Signals[0].Bars.Info.Name, InitialCapital, changeInMoney, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)numberOfEntries : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash);
 					if(strategy.EntryContracts == 0)
 						Log(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
 	            }
@@ -194,5 +194,5 @@ namespace PowerLanguage.Strategy
 				Log("Distributed money: {0}$", sumInvested);
 			}
         }
-    }
+   }
 }
