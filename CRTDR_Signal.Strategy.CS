@@ -112,30 +112,37 @@ namespace PowerLanguage.Strategy {
 		
 		private void Log(string message, params object[] parameters)
 		{
+			Log(false, message, parameters);
+		}
+		
+		private void LogAndMail(string message, params object[] parameters)
+		{
+			Log(true, message, parameters);
+		}
+		
+		private void Log(bool sendMail, string message, params object[] parameters)
+		{
 			if(!Environment.Optimizing)
 			{
-				var str = string.Format("{0} - {1} - ({2}) - {3}: {4}", DateTime.Now, Bars.TimeValue, Environment.IsRealTimeCalc ? "REALTIME" : "HISTORIC", Bars.Info.Name, string.Format(message, parameters));
+				var str = string.Format("{0} - {1} - (AutoTrading: {2}, RealTime: {3}) - {4}: {5}", DateTime.Now, Bars.TimeValue, Environment.IsAutoTradingMode ? "YES" : "NO", Environment.IsRealTimeCalc ? "YES" : "NO", Bars.Info.Name, string.Format(message, parameters));
 				
 				if(Environment.IsRealTimeCalc)
 				{
 					logStringBuilder.AppendLine(str);
-					if(logStringBuilder.Length >= 1000000)
+					//if(logStringBuilder.Length >= 1000)
 					{
 						DumpLog();
 					}
 				}
 				
+				if(sendMail)
+				{
+					System.Threading.ThreadPool.QueueUserWorkItem(o => Mail(str));
+				}
+				
 				Output.WriteLine(str);
 			}
 		}
-		
-        // http://www.tradingcode.net/multicharts-net/trading-strategies/exit-strategy-position-prior-close/
-//        private bool TimeToEnter()
-//        {
-//            // On real-time data, we use DateTime.Now
-//            // Else, when backtesting, use the bar time
-//            return (Environment.IsRealTimeCalc ? DateTime.Now : Bars.TimeValue).TimeOfDay >= closeTime;
-//        }
         
 		private void DumpLog()
 		{
@@ -143,48 +150,25 @@ namespace PowerLanguage.Strategy {
 			logStringBuilder.Length = 0;
 		}
 		
-//		private TimeSpan closeTime = new TimeSpan(14, 55, 48);
-//		private bool executedInThisBar;
-		
-//		bool lastBarWasHistorical = true;
-		
         protected override void CalcBar(){
-//            System.Diagnostics.Debugger.Launch();
-//			var timeToEnter = TimeToEnter();
-			//ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(10));
-
-            //if (this.Bars.Info.Name == "AAPL")
-				Log("{0}, {1}, {2}, {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
-
+			Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
+			Log("Open: {0}, High: {1}, Low: {2}, Close: {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
 			
-//			Log("Executed in this bar: " + executedInThisBar);
-			
-//  			if(!timeToEnter)
-// 			{
-//				Log("Not yet TimeToEnter() {0} executedInThisBar {1}", timeToEnter, executedInThisBar);
-// 				executedInThisBar = false;
-// 				return;
-// 			}
-  			
-//  			if(Environment.IsRealTimeCalc)
-// 			{
-//				if(!lastBarWasHistorical && executedInThisBar)
+			// delay buys by ten seconds
+			var marketPosition = StrategyInfo.MarketPosition;
+			if(Environment.CalcReason != CalculationReason.Timer)
+			{
+				// prevent execution in case of unexpected events
+				if(Bars.Status != EBarState.Close) return;
+				
+//				if(Environment.IsRealTimeCalc && marketPosition == 0)
 //				{
+//					Log("Delaying symbol since no open position found. Let us process the sells first...");
+//					ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(15));
 //					return;
 //				}
-//				
-//				lastBarWasHistorical = false;
-//			}
+			}
 			
-//            if(!Environment.IsRealTimeCalc && Bars.TimeValue.Date.Equals(DateTime.Now.Date))
-//			{
-//				Log("That situation happened indeed");
-//                return;
-//			}
-            
-//			executedInThisBar = true;
-						
-			Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
             var rsiDown = cutlersRSIIndicatorMathDown.CalcNextValue(Bars.CloseValue);
             var rsiFlat = cutlersRSIIndicatorMathFlat.CalcNextValue(Bars.CloseValue);
             var rsiUp = cutlersRSIIndicatorMathUp.CalcNextValue(Bars.CloseValue);
@@ -206,15 +190,13 @@ namespace PowerLanguage.Strategy {
 			MyPortfolioData["CRTDR"] = crtdr;
 			MyPortfolioData["EXIT"] = false;
 			
-			var marketPosition = StrategyInfo.MarketPosition;
 			if(marketPosition == 0)
 			{
 	            if (GetSignalUp(crtdr, rsi, trend))
 	            {
 					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
-	           		//Log("!!!LONG !!! Attempting to buy {0}", numLots);
 					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
-					LogAndMail("({0}: @ assumed price {1}$", Bars.Info.Name, Bars.CloseValue);
+					LogAndMail("!!!LONG !!! Attempting to buy {0} shares @ {1}$", numLots, Bars.CloseValue);
 	                buyOrder.Send(numLots);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
@@ -236,19 +218,20 @@ namespace PowerLanguage.Strategy {
 				// close non-profitable positions straight away because we have picked a loser and need to free up money for new deals
 				if(CurrentPosition.OpenProfit < 0)
 				{
-	           		Log("!!!CLOSE!!!");
-					GenerateExitOnClose();
+	           		LogAndMail("!!!Loser cut!!! This appears to be a loser. Assumed loss: {0}$", CurrentPosition.OpenProfit);
+					sellOrder.Send("Loser cut");
+					//GenerateExitOnClose();
 					MyPortfolioData["EXIT"] = true;
 				}
 				else if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
 				{
-	           		Log("!!!SELL1!!!");
+	           		LogAndMail("!!!SELL condition 1!!! Bars since entry > 2 and no up signal, so let's exit. Assuming to cash in {0}$", CurrentPosition.OpenProfit);
 					sellOrder.Send("SELL1");
 					MyPortfolioData["EXIT"] = true;
 				}
 				else if(rsi > (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat)))
 				{
-	           		Log("!!!SELL2!!!", Bars.TimeValue);
+	           		LogAndMail("!!!SELL condition 2!!! RSI condition satisfied, we take the profit (assumed to be around {0}) and run!", CurrentPosition.OpenProfit);
 					sellOrder.Send("SELL2");
 					MyPortfolioData["EXIT"] = true;
 				}
@@ -334,46 +317,45 @@ namespace PowerLanguage.Strategy {
 		
 		protected override void OnBrokerStategyOrderFilled(bool isBuy, int quantity, double avgFillPrice)
 		{
-			Log("Order filled. Is buy: {0} quantity: {1}, avg. fill price: {2}. MarketPositionAtBroker={3}, AvgEntryPriceAtBroker={4}, MarketPositionAtBrokerForTheStrategy={5}, AvgEntryPriceAtBrokerForTheStrategy={6}, MarketPosition={7}, AvgEntryPrice={8}", isBuy ? "TRUE" : "FALSE", quantity, avgFillPrice, StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
+			LogAndMail("{0} order filled. Quantity: {1}, avg. fill price: {2}. MarketPositionAtBroker={3}, AvgEntryPriceAtBroker={4}, MarketPositionAtBrokerForTheStrategy={5}, AvgEntryPriceAtBrokerForTheStrategy={6}, MarketPosition={7}, AvgEntryPrice={8}", isBuy ? "BUY" : "SELL", quantity, avgFillPrice, StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
 		}
 		
 		protected override void OnBrokerPositionChange()
 		{
-			Log("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}, MarketPositionAtBrokerForTheStrategy={2}, AvgEntryPriceAtBrokerForTheStrategy={3}, MarketPosition={4}, AvgEntryPrice={5}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
+			LogAndMail("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}, MarketPositionAtBrokerForTheStrategy={2}, AvgEntryPriceAtBrokerForTheStrategy={3}, MarketPosition={4}, AvgEntryPrice={5}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
 		}
 		
         // Recalculate the last bar when performing the recalculation
         protected override void OnRecalcLastBarAfterEvent()
         {
-            CalcBar();
+//			Log("ReCalc event");
+//            CalcBar();
         }
 		
 		private static string fromPassword = System.IO.File.ReadAllText(@"C:\temp\do_not_delete\asdf.txt");
 		private static MailAddress fromAddress = new MailAddress("ramanddan.trading@gmail.com", "RamAndDan Trading");
-		private SmtpClient smtp = new SmtpClient
-		{
-			Host = "smtp.gmail.com",
-			Port = 587,
-			EnableSsl = true,
-			DeliveryMethod = SmtpDeliveryMethod.Network,
-			UseDefaultCredentials = false,
-			Credentials = new NetworkCredential(fromAddress.Address, fromPassword)
-		};
 		
-		private void LogAndMail(string message, params object[] parameters)
+		private void Mail(string message)
 		{
-			Log(message, parameters);
 			if(Environment.IsRealTimeCalc)
 			{
 				try
 				{
-					Log("sending email");
-					
+					//Log("Sending email");
+					using(SmtpClient smtp = new SmtpClient
+					{
+						Host = "smtp.gmail.com",
+						Port = 587,
+						EnableSsl = true,
+						DeliveryMethod = SmtpDeliveryMethod.Network,
+						UseDefaultCredentials = false,
+						Credentials = new NetworkCredential(fromAddress.Address, fromPassword)
+					})
 					using (var mailMessage = new MailMessage()
 					{
 						From = fromAddress,
-						Subject = "Order potentially executed... ;)",
-						Body = string.Format(message, parameters)
+						Subject = "Hello from the other side...",
+						Body = message
 					})
 					{
 						mailMessage.To.Add("ramon@winter-berg.com");

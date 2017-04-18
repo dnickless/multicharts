@@ -34,7 +34,7 @@ namespace PowerLanguage
 			
 			public static double CalcNextValue(double high, double low, double close)
 			{
-				return high != low ? (close - low) / (high - low) : double.NaN;
+				return high != low ? (close - low) / (high - low) : 1d;
 			}
 		}
 	}

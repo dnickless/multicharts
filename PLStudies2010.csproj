@@ -327,6 +327,8 @@
     <Compile Include="Test.Strategy.CS" />
     <Compile Include="DipTrader.Strategy.CS" />
     <Compile Include="Portfolio_KRatioOptimization.Strategy.CS" />
+    <Compile Include="RSIRankEx_MM.Strategy.CS" />
+    <Compile Include="RSIRankEx_SignalBase.Strategy.CS" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
