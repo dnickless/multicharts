@@ -10,6 +10,7 @@ using ATCenterProxy.interop;
 
 namespace PowerLanguage.Strategy {
     public class CRTDR_Signal : PortfolioSignalObject {
+		private const int recalcFrequency = 10;
         public CRTDR_Signal(object _ctx):base(_ctx){}
         private IOrderMarket buyOrder;
         private IOrderMarket sellOrder;
@@ -73,10 +74,14 @@ namespace PowerLanguage.Strategy {
         private XAverageThatWorks xAverageLong;
         private XAverageThatWorks xAverageShort;
 		private bool doReinvestment = false;
+		
+		private DateTime lastOrderGenerated;
+		
+		string symbolName;
         
         protected override void Create() {
             buyOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.UserSpecified, EOrderAction.Buy));
-            sellOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.Default, "RSI LE", EOrderAction.Sell, OrderExit.FromAll));
+            sellOrder = OrderCreator.MarketThisBar(new SOrderParameters(EOrderAction.Sell));
             //sellShortOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.UserSpecified, EOrderAction.SellShort));
             //buyToCoverOrder = OrderCreator.MarketThisBar(new SOrderParameters(Contracts.Default, "RSI SE", EOrderAction.BuyToCover, OrderExit.FromAll));
             cutlersRSIIndicatorMathDown = new CutlersRSIIndicatorMath(this, 1);
@@ -87,9 +92,6 @@ namespace PowerLanguage.Strategy {
         }
         
         protected override void StartCalc() {
-			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
-			MyPortfolioData["CRTDR"] = 1;
-			MyPortfolioData["EXIT"] = false;
 			cutlersRSIIndicatorMathDown.Length = RsiLengthDown;
 			cutlersRSIIndicatorMathFlat.Length = RsiLengthFlat;
 			cutlersRSIIndicatorMathUp.Length = RsiLengthUp;
@@ -97,14 +99,15 @@ namespace PowerLanguage.Strategy {
 			xAverageLong.Length = EmaLong;
             xAverageShort.Price = Bars.Close;
 			xAverageShort.Length = EmaShort;
-        }
+			symbolName = Bars.Info.Name;
+		}
 		
 		protected override void StopCalc()
 		{
 			if(!Environment.Optimizing)
 			{
 				Output.WriteLine("Dumping log for {0}", Bars.Info.Name);
-				DumpLog();
+				DumpLog(false);
 			}
 		}
         
@@ -129,75 +132,72 @@ namespace PowerLanguage.Strategy {
 				if(Environment.IsRealTimeCalc)
 				{
 					logStringBuilder.AppendLine(str);
-					//if(logStringBuilder.Length >= 1000)
+					if(sendMail)
 					{
-						DumpLog();
+						DumpLog(true);
 					}
+//					else if(logStringBuilder.Length >= 1000)
+//					{
+//						DumpLog(false);
+//					}
 				}
 				
-				if(sendMail)
-				{
-					System.Threading.ThreadPool.QueueUserWorkItem(o => Mail(str));
-				}
-				
-				Output.WriteLine(str);
+				//Output.WriteLine(str);
 			}
 		}
         
-		private void DumpLog()
+		private void DumpLog(bool sendMail)
 		{
-			File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", logStringBuilder.ToString()); 
+			string str = logStringBuilder.ToString();
+			File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", str); 
+			if(sendMail)
+			{
+				System.Threading.ThreadPool.QueueUserWorkItem(o => Mail(str));
+			}
 			logStringBuilder.Length = 0;
 		}
 		
         protected override void CalcBar(){
-			Log("Calc Reason: {0}, Bar Status: {1}", Environment.CalcReason, Bars.Status);
-			Log("Open: {0}, High: {1}, Low: {2}, Close: {3}", Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
-			
-			// delay buys by ten seconds
-			var marketPosition = StrategyInfo.MarketPosition;
-			if(Environment.CalcReason != CalculationReason.Timer)
+			if (!Environment.IsRealTimeCalc) // There is no need to calculate on historical data, that is why backtesting is ignored
 			{
-				// prevent execution in case of unexpected events
-				if(Bars.Status != EBarState.Close) return;
-				
-//				if(Environment.IsRealTimeCalc && marketPosition == 0)
-//				{
-//					Log("Delaying symbol since no open position found. Let us process the sells first...");
-//					ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(15));
-//					return;
-//				}
+				// As soon as backtesting is finished, the signal gets immediately calculated by the timer.
+				// It is necessary to calculate the CRTDR and other values which can be requested by MM-signal at any moment.
+				ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));
+				return;
 			}
 			
-            var rsiDown = cutlersRSIIndicatorMathDown.CalcNextValue(Bars.CloseValue);
-            var rsiFlat = cutlersRSIIndicatorMathFlat.CalcNextValue(Bars.CloseValue);
-            var rsiUp = cutlersRSIIndicatorMathUp.CalcNextValue(Bars.CloseValue);
-            
+			//Log("Calc Reason: {0}, Bar Status: {1}, Open: {2}, High: {3}, Low: {4}, Close: {5}", Environment.CalcReason, Bars.Status, Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
+
             var high = Bars.HighValue;
             var low = Bars.LowValue;
             var close = Bars.CloseValue;
-            
-            var crtdr = CRTDRIndicatorMath.CalcNextValue(high, low, close);
+		    
+	        var crtdr = CRTDRIndicatorMath.CalcNextValue(high, low, close);
 			
 			var xAverageLongValue = xAverageLong.Value;
 			var xAverageShortValue = xAverageShort.Value;
 			
 			var trend = GetTrend(close, xAverageLongValue, xAverageShortValue);
+			
+			var rsiDown = cutlersRSIIndicatorMathDown.Value;
+            var rsiFlat = cutlersRSIIndicatorMathFlat.Value;
+            var rsiUp = cutlersRSIIndicatorMathUp.Value;
+		    
 			var rsi = trend == Trend.Down ? rsiDown : (trend == Trend.Up ? rsiUp : rsiFlat);
 			
-       		Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLongValue, xAverageShortValue);
-			MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = null;
-			MyPortfolioData["CRTDR"] = crtdr;
-			MyPortfolioData["EXIT"] = false;
+			MyPortfolioData[PortfolioDataKeys.IWantToBuy] = false;
+			MyPortfolioData[PortfolioDataKeys.IWantToSell] = false;
+			MyPortfolioData[PortfolioDataKeys.CRTDR] = crtdr;
 			
-			if(marketPosition == 0)
+       		//Log("Calculating strategy, high {0} low {1} close {2} rsi {3} crtdr {4} xAverageLong {5} xAverageShort {6}", high, low, close, rsi, crtdr, xAverageLongValue, xAverageShortValue);
+			
+			if(StrategyInfo.MarketPosition == 0)
 			{
 	            if (GetSignalUp(crtdr, rsi, trend))
 	            {
-					var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
-					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = Bars.CloseValue;
-					LogAndMail("!!!LONG !!! Attempting to buy {0} shares @ {1}$", numLots, Bars.CloseValue);
-	                buyOrder.Send(numLots);
+					//var numLots = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
+					MyPortfolioData[PortfolioDataKeys.IWantToBuy] = true;
+					//Log("Signal says: We would like to buy @ {0}$", Bars.CloseValue);
 	            }
 //				else if (GetSignalDown(crtdr, rsi, trend))
 //	            {
@@ -205,35 +205,38 @@ namespace PowerLanguage.Strategy {
 //					MyPortfolioData[PortfolioHelpFunctions.PotentialEntryPrice] = -Bars.CloseValue;
 //					sellShortOrder.Send(Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / 10.0 / Bars.CloseValue));
 //	            }
-				else
-				{
-	           		//Log("---  FLAT - NOP ---");
-				}
+//				else
+//				{
+//	           		Log("---  FLAT - NOP ---");
+//				}
 			}
-			else if(marketPosition > 0)
+			else if(StrategyInfo.MarketPosition > 0)
 			{
 				// WE ARE LONG
-				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(marketPosition) * StopLossLevel);
+				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
+				
+				var barsSinceEntry = Bars.CurrentBar - CurrentPosition.OpenTrades[0].EntryOrder.BarNumber;
+				//var barsSinceEntry = this.BarsSinceEntry();
+				var openProfit = CurrentPosition.OpenProfit;
+				var signalUp = GetSignalUp(crtdr, rsi, trend);
+				var rsiSellLevel = GetRsiSellLevel(trend);
+				//Log("Should we sell? Bars since entry: {0}, open profit: {1}, signal up: {2}, rsi: {3}, rsiSellLevel: {4}", barsSinceEntry, openProfit, signalUp, rsi, rsiSellLevel);
 				
 				// close non-profitable positions straight away because we have picked a loser and need to free up money for new deals
-				if(CurrentPosition.OpenProfit < 0)
+				if(openProfit < 0)
 				{
-	           		LogAndMail("!!!Loser cut!!! This appears to be a loser. Assumed loss: {0}$", CurrentPosition.OpenProfit);
-					sellOrder.Send("Loser cut");
-					//GenerateExitOnClose();
-					MyPortfolioData["EXIT"] = true;
+	           		//Log("Loser cut! Assumed loss: {0}$", CurrentPosition.OpenProfit);
+					MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
 				}
-				else if (this.BarsSinceEntry() > 2 && !GetSignalUp(crtdr, rsi, trend))
+				else if (barsSinceEntry > 2 && !signalUp)
 				{
-	           		LogAndMail("!!!SELL condition 1!!! Bars since entry > 2 and no up signal, so let's exit. Assuming to cash in {0}$", CurrentPosition.OpenProfit);
-					sellOrder.Send("SELL1");
-					MyPortfolioData["EXIT"] = true;
+	           		//Log("SELL! Bars since entry > 2 and no up signal. Assuming to cash in ~{0}$", CurrentPosition.OpenProfit);
+					MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
 				}
-				else if(rsi > (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat)))
+				else if(rsi > rsiSellLevel)
 				{
-	           		LogAndMail("!!!SELL condition 2!!! RSI condition satisfied, we take the profit (assumed to be around {0}) and run!", CurrentPosition.OpenProfit);
-					sellOrder.Send("SELL2");
-					MyPortfolioData["EXIT"] = true;
+	           		//Log("SELL! RSI condition satisfied, we take the profit (~{0}$) and run!", CurrentPosition.OpenProfit);
+					MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
 				}
 				else
 				{
@@ -260,8 +263,54 @@ namespace PowerLanguage.Strategy {
 //	           		Log("--- SHORT - NOP ---");
 //				}
 //			}
+			
+			StrategyEvents cmd = StrategyEvents.None;
+			object obj = MyPortfolioData[PortfolioDataKeys.MoneyManagementCommand];   // Check, if there are any MM-signal events available
+
+			if (obj != null)
+			{
+				cmd = (StrategyEvents)obj;
+			}
+
+			//Log("Got command {0}", cmd);
+			
+			switch (cmd) // Execute specific commands, depending on the event
+			{
+				case StrategyEvents.GenerateOrders_Long:
+					int numberOfShares = Convert.ToInt32(MyPortfolioData[PortfolioDataKeys.NumberOfShares]);
+					buyOrder.Send(numberOfShares);
+					lastOrderGenerated = DateTime.Now.Date;
+					Log("Generated Buy: {0}#", numberOfShares);
+					break;
+
+				case StrategyEvents.GenerateOrders_Short:
+					sellOrder.Send();
+					lastOrderGenerated = DateTime.Now.Date;
+					Log("Generated Sell.");
+					break;
+
+				case StrategyEvents.None:
+					ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));
+					break;
+			}
+
+			if (Bars.Status == EBarState.Close)                                                                         // During calculation at the bar close, global variables, used to exchange messages between the current signal and MM-signal
+			{                                                                                                           // should be zeroed
+				Log(lastOrderGenerated == DateTime.Now.Date, "Close event received.");
+				MyPortfolioData[PortfolioDataKeys.CRTDR] = 1.0;
+				MyPortfolioData[PortfolioDataKeys.MoneyManagementCommand] = StrategyEvents.None;
+				MyPortfolioData[PortfolioDataKeys.IWantToBuy] = false;
+				MyPortfolioData[PortfolioDataKeys.IWantToSell] = false;
+				MyPortfolioData[PortfolioDataKeys.NumberOfShares] = 0;
+				ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));                                                // And start the timer to wait for the new commands from MM-signal
+			}
         }
         
+		private double GetRsiSellLevel(Trend trend)
+		{
+			return (trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat));
+		}
+		
 		private enum Trend
 		{
 			Up = 1,
@@ -318,18 +367,17 @@ namespace PowerLanguage.Strategy {
 		protected override void OnBrokerStategyOrderFilled(bool isBuy, int quantity, double avgFillPrice)
 		{
 			LogAndMail("{0} order filled. Quantity: {1}, avg. fill price: {2}. MarketPositionAtBroker={3}, AvgEntryPriceAtBroker={4}, MarketPositionAtBrokerForTheStrategy={5}, AvgEntryPriceAtBrokerForTheStrategy={6}, MarketPosition={7}, AvgEntryPrice={8}", isBuy ? "BUY" : "SELL", quantity, avgFillPrice, StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
+			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));                                            // If there were no instructions from MM-signal, we will keep waiting for them.
 		}
 		
 		protected override void OnBrokerPositionChange()
 		{
-			LogAndMail("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}, MarketPositionAtBrokerForTheStrategy={2}, AvgEntryPriceAtBrokerForTheStrategy={3}, MarketPosition={4}, AvgEntryPrice={5}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
+			Log("MarketPositionAtBroker={0}, AvgEntryPriceAtBroker={1}, MarketPositionAtBrokerForTheStrategy={2}, AvgEntryPriceAtBrokerForTheStrategy={3}, MarketPosition={4}, AvgEntryPrice={5}", StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
 		}
 		
-        // Recalculate the last bar when performing the recalculation
         protected override void OnRecalcLastBarAfterEvent()
         {
-//			Log("ReCalc event");
-//            CalcBar();
+		    CalcBar();
         }
 		
 		private static string fromPassword = System.IO.File.ReadAllText(@"C:\temp\do_not_delete\asdf.txt");
@@ -341,7 +389,6 @@ namespace PowerLanguage.Strategy {
 			{
 				try
 				{
-					//Log("Sending email");
 					using(SmtpClient smtp = new SmtpClient
 					{
 						Host = "smtp.gmail.com",
@@ -354,7 +401,7 @@ namespace PowerLanguage.Strategy {
 					using (var mailMessage = new MailMessage()
 					{
 						From = fromAddress,
-						Subject = "Hello from the other side...",
+						Subject = string.Format("Trading day summary: {0}", symbolName),
 						Body = message
 					})
 					{
@@ -363,8 +410,9 @@ namespace PowerLanguage.Strategy {
 						smtp.Send(mailMessage);
 					}
 				}
-				catch(Exception)
+				catch(Exception e)
 				{
+					Log("Error sending email: {0}", e.Message);
 				}
 			}
 		}

@@ -30,9 +30,11 @@ namespace PowerLanguage.Strategy
         public int LatencyMS { get; set; }
 
         protected override void StartCalc(){
-            m_textid = DrwText.Create(new ChartPoint(Bars.Time[0], Bars.Close[0]), "CurrentState");
-            m_textid.HStyle = ETextStyleH.Left;
-            m_textid.VStyle = ETextStyleV.Below;
+            m_textid = Environment.ApplicationCode == EApplicationCode.Portfolio ? null : DrwText.Create(new ChartPoint(Bars.Time[0], Bars.Close[0]), "CurrentState");
+			if (m_textid != null) {
+	            m_textid.HStyle = ETextStyleH.Left;
+	            m_textid.VStyle = ETextStyleV.Below;
+			}
             m_sync_state = "MP is synchronized!";
             m_diff_state = string.Format("MP syncronization.\nWait {0} seconds", TimeOutMS*0.001);
             m_mp_diff = false;
@@ -48,7 +50,8 @@ namespace PowerLanguage.Strategy
                 var m_inner_mp = StrategyInfo.MarketPosition;
                 var m_broker_mp = StrategyInfo.MarketPositionAtBroker;
 
-                m_textid.Location = new ChartPoint(Environment.RightScreenTime, Environment.HighestScaleValue);
+				if (m_textid != null)
+					m_textid.Location = new ChartPoint(Environment.RightScreenTime, Environment.HighestScaleValue);
 
                 if (m_broker_mp != m_inner_mp){
                     m_mp_diff_detected_time = DateTime.Now;
@@ -56,7 +59,8 @@ namespace PowerLanguage.Strategy
                     if (!m_mp_diff && !m_mp_corrected){
                         m_mp_diff = true;
                         m_mp_diff_time_start = m_mp_diff_detected_time;
-                        m_textid.Text = m_diff_state;
+						if (m_textid != null)
+							m_textid.Text = m_diff_state;
                     }
 
                     var _exit_price = .0;
@@ -86,7 +90,8 @@ namespace PowerLanguage.Strategy
                     }
                 }
                 else{
-                    m_textid.Text = m_sync_state;
+					if (m_textid != null)
+						m_textid.Text = m_sync_state;
                     m_mp_corrected = false;
                     m_mp_diff = false;
                 }

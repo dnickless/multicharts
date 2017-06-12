@@ -22,7 +22,7 @@ namespace PowerLanguage.Indicator{
 		}
 		protected override void CalcBar(){
 			// indicator logic 
-			plot1.Set(cutlersRSIIndicatorMath.CalcNextValue(Bars.Close[0]));
+			plot1.Set(cutlersRSIIndicatorMath.Value);
 		}
 	}
 }

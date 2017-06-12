@@ -2,71 +2,61 @@
 using System.Drawing;
 using System.Linq;
 
-
 namespace PowerLanguage
 {
 	namespace Function
 	{
-		public sealed class CutlersRSIIndicatorMath : FunctionSimple<System.Double>
+		public sealed class CutlersRSIIndicatorMath : FunctionSeries<System.Double>
 		{
 			[Input]
 			public int Length { get; set; }
 			
-			double lastClose;
-			int c;
-			int n;
-			double[] lastGains;
-			double[] lastLosses;
+			VariableSeries<double> lastGains;
+			VariableSeries<double> lastLosses;
 			
 			public CutlersRSIIndicatorMath(CStudyControl _master) : base(_master) { Length = 3; }
 			public CutlersRSIIndicatorMath(CStudyControl _master, int _ds) : base(_master, _ds) { Length = 3; }
 
-			protected override void StartCalc()
+			protected override void Create()
 			{
-				lastGains = new double[Length];
-				lastLosses = new double[Length];
-				n = Length;
-				c = 0;
-				lastClose = 0;
+				lastGains = new VariableSeries<double>(this);
+				lastLosses = new VariableSeries<double>(this);
 			}
 
-			public double CalcNextValue(double close)
+			private double GetAverage(VariableSeries<double> series)
 			{
-				double res;
-				var lastResult = close - lastClose;
-				var i = c % n;
-				lastGains[i] = lastResult > 0 ? lastResult : 0;
-				lastLosses[i] = lastResult < 0 ? lastResult : 0;
+				double value = 0;
 				
-				c++;
-				if (c > n)
+				for(int i = Length - 1; i >= 0; i--)
 				{
-					var avgLoss = lastLosses.Average();
-					if (avgLoss == 0)
-					{
-						 res = 100;
-					}
-					else
-					{
-						res = 100.0-100.0/(1+(Math.Abs(lastGains.Average())/Math.Abs(lastLosses.Average())));
-					}
-					
-				}
-				else
-				{
-					 res = 0;
+					value += series[i];
 				}
 				
-				lastClose = close;
-				
-				return res;
+				return value / (double)Length;
 			}
 			
 			protected override System.Double CalcBar()
 			{
-				// function logic
-				double close = Bars.Close[0];
-				return CalcNextValue(close);
+				var lastResult = Bars.Close[0] - Bars.Close[1];
+				var i = Bars.CurrentBar % Length;
+				lastGains.Value = lastResult > 0 ? lastResult : 0;
+				lastLosses.Value = lastResult < 0 ? lastResult : 0;
+				
+				if (Bars.CurrentBar > Length)
+				{
+					var avgLoss = GetAverage(lastLosses);
+					if (avgLoss == 0)
+					{
+						return 100;
+					}
+					else
+					{
+						return 100.0 - 100.0 / (1 + (Math.Abs(GetAverage(lastGains)) / Math.Abs(avgLoss)));
+					}
+					
+				}
+				
+				return 0;
 			}
 		}
 	}

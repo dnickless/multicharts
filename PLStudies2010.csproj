@@ -314,7 +314,6 @@
     <Compile Include="CutlersRSI.Indicator.CS" />
     <Compile Include="CRTDRIndicatorMath.Function.CS" />
     <Compile Include="CutlersRSIIndicatorMath.Function.CS" />
-    <Compile Include="CRTDR_Signal_Backtest.Strategy.CS" />
     <Compile Include="optimize_by_K_Ratio.Strategy.CS" />
     <Compile Include="K_RatioBarsMath.Function.CS" />
     <Compile Include="Portfolio_Master.Strategy.CS" />

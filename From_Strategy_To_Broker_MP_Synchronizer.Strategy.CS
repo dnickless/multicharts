@@ -47,7 +47,7 @@ namespace PowerLanguage.Strategy
         }
 
         protected override void StartCalc(){
-            m_textid = DrwText.Create(new ChartPoint(Bars.Time[0], Bars.Close[0]), "CurrentState");
+			m_textid = Environment.ApplicationCode == EApplicationCode.Portfolio ? null : DrwText.Create(new ChartPoint(Bars.Time[0], Bars.Close[0]), "CurrentState");
             m_sync_state = "MP is synchronized!";
             m_diff_state = "MP syncronization. Wait " + (TimeOut_ms*.001) + " seconds.";
             m_correction_state = "MP correction order sent. Wait " + (Latency_ms*0.001) + " seconds.";
@@ -65,13 +65,15 @@ namespace PowerLanguage.Strategy
                 var m_broker_mp = StrategyInfo.MarketPositionAtBroker;
                 var m__rightest = Environment.RightScreenTime;
                 var m__highest = Environment.HighestScaleValue;
-                m_textid.Location = new ChartPoint(m__rightest, m__highest);
+				if (m_textid != null)
+					m_textid.Location = new ChartPoint(m__rightest, m__highest);
                 if (m_broker_mp != m_inner_mp){
                     var m__get_tick_count = DateTime.Now.Ticks;
                     if (!m_mp_diff && !m_mp_corrected){
                         m_mp_diff = true;
                         m_mp_diff_time_start = m__get_tick_count;
-                        m_textid.Text = m_diff_state;
+						if (m_textid != null)
+							m_textid.Text = m_diff_state;
                     }
                     if (m_mp_diff && !m_mp_corrected
                          && PublicFunctions.DoubleGreater(m__get_tick_count - m_mp_diff_time_start, TimeOut_ms))
@@ -81,7 +83,8 @@ namespace PowerLanguage.Strategy
                         m_mp_corrected_time_start = m__get_tick_count;
                     }
                     if (m_mp_corrected){
-                        m_textid.Text = m_correction_state;
+						if (m_textid != null)
+							m_textid.Text = m_correction_state;
                         if (PublicFunctions.DoubleGreater(m__get_tick_count - m_mp_corrected_time_start,
                                                           Latency_ms)){
                             m_mp_corrected_time_start = m__get_tick_count;
@@ -98,7 +101,8 @@ namespace PowerLanguage.Strategy
                     }
                 }
                 else{
-                    m_textid.Text = m_sync_state;
+					if (m_textid != null)
+						m_textid.Text = m_sync_state;
                     m_mp_corrected = false;
                     m_mp_diff = false;
                 }

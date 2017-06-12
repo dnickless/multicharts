@@ -18,13 +18,17 @@ Namespace PowerLanguage.Strategy
                 Dim m_broker_mp As Integer = MyBase.StrategyInfo.MarketPositionAtBroker
                 Dim m__rightest As DateTime = MyBase.Environment.RightScreenTime
                 Dim m__highest As Double = MyBase.Environment.HighestScaleValue
-                Me.m_textid.Location = New ChartPoint(m__rightest, m__highest)
+                If Not Nothing Is Me.m_textid Then
+                    Me.m_textid.Location = New ChartPoint(m__rightest, m__highest)
+                End If
                 If (m_broker_mp <> m_inner_mp) Then
                     Dim m__get_tick_count As Long = DateTime.Now.Ticks
                     If Not (Me.m_mp_diff OrElse Me.m_mp_corrected) Then
                         Me.m_mp_diff = True
                         Me.m_mp_diff_time_start = m__get_tick_count
-                        Me.m_textid.Text = Me.m_diff_state
+                        If Not Nothing Is Me.m_textid Then
+                            Me.m_textid.Text = Me.m_diff_state
+                        End If
                     End If
                     If ((Me.m_mp_diff AndAlso Not Me.m_mp_corrected) AndAlso PublicFunctions.DoubleGreater((m__get_tick_count - Me.m_mp_diff_time_start), Me.TimeOut_ms)) Then
                         Me.m_place_correction_marketorder = True
@@ -32,7 +36,9 @@ Namespace PowerLanguage.Strategy
                         Me.m_mp_corrected_time_start = m__get_tick_count
                     End If
                     If Me.m_mp_corrected Then
-                        Me.m_textid.Text = Me.m_correction_state
+                        If Not Nothing Is Me.m_textid Then
+                            Me.m_textid.Text = Me.m_correction_state
+                        End If
                         If PublicFunctions.DoubleGreater((m__get_tick_count - Me.m_mp_corrected_time_start), Me.Latency_ms) Then
                             Me.m_mp_corrected_time_start = m__get_tick_count
                             Me.m_mp_diff = False
@@ -46,15 +52,21 @@ Namespace PowerLanguage.Strategy
                         MyBase.GenerateATMarketOrder(m_is_buy, True, m_correct_contracts)
                     End If
                 Else
-                    Me.m_textid.Text = Me.m_sync_state
+                    If Not Nothing Is Me.m_textid Then
+                        Me.m_textid.Text = Me.m_sync_state
+                    End If
                     Me.m_mp_corrected = False
                     Me.m_mp_diff = False
-                End If
+                    End If
             End If
         End Sub
 
         Protected Overrides Sub StartCalc()
-            Me.m_textid = MyBase.DrwText.Create(New ChartPoint(MyBase.Bars.Time.Item(0), MyBase.Bars.Close.Item(0)), "CurrentState")
+            If MyBase.Environment.ApplicationCode = EApplicationCode.Portfolio Then
+                Me.m_textid = Nothing
+            Else
+                Me.m_textid = MyBase.DrwText.Create(New ChartPoint(MyBase.Bars.Time.Item(0), MyBase.Bars.Close.Item(0)), "CurrentState")
+            End If
             Me.m_sync_state = "MP is synchronized!"
             Me.m_diff_state = ("MP syncronization. Wait " & (Me.TimeOut_ms * 0.001) & " seconds.")
             Me.m_correction_state = ("MP correction order sent. Wait " & (Me.Latency_ms * 0.001) & " seconds.")
