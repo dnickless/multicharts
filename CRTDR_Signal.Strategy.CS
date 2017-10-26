@@ -215,8 +215,8 @@ namespace PowerLanguage.Strategy {
 				// WE ARE LONG
 				GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
 				
-				var barsSinceEntry = Bars.CurrentBar - CurrentPosition.OpenTrades[0].EntryOrder.BarNumber;
-				//var barsSinceEntry = this.BarsSinceEntry();
+				//var barsSinceEntry = Bars.CurrentBar - CurrentPosition.OpenTrades[0].EntryOrder.BarNumber;
+				var barsSinceEntry = Math.Min(1, this.BarsSinceEntry());
 				var openProfit = CurrentPosition.OpenProfit;
 				var signalUp = GetSignalUp(crtdr, rsi, trend);
 				var rsiSellLevel = GetRsiSellLevel(trend);

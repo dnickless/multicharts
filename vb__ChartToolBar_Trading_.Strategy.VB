@@ -1,6 +1,7 @@
 ﻿Imports ATCenterProxy.interop
 Imports System.Collections.Generic
 Imports PowerLanguage
+Imports PowerLanguage.Strategy
 Imports PowerLanguage.TradeManager
 Imports System
 Imports System.Drawing
@@ -88,8 +89,8 @@ Namespace PowerLanguage.Strategy
             If (0 < mp) Then
                 _mp_string = (mp.ToString & " Long")
                 ElseIf (0 > mp) Then
-                    _mp_string = (-mp.ToString & " Short")
-                Else
+                _mp_string = ((-mp).ToString & " Short")
+            Else
                     _mp_string = "Flat"
                 End If
             Return String.Format("{0} {1}", _mp_string, opl.ToString("C"))

@@ -1,5 +1,6 @@
 ﻿Imports PowerLanguage
 Imports PowerLanguage.Function
+Imports PowerLanguage.Strategy
 Imports System
 Imports System.Runtime.CompilerServices
 

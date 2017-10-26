@@ -247,7 +247,9 @@ namespace PowerLanguage.Strategy
 					availableCash = Math.Max(0, Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital));
 				}
 				
-				var cashToInvest = availableCash / 100.0 * Portfolio.MaxRiskEquityPerPosPercent * (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR));
+				double cashToInvest = availableCash / 100.0 * Portfolio.MaxRiskEquityPerPosPercent * (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR));
+				// limit to 33% max. exposure per deal
+				cashToInvest = Math.Min(cashToInvest, (InitialCapital + changeInMoney + Portfolio.NetProfit) / 3.0);
 				sumInvested += cashToInvest;
 				var possibleEntryPrice = Math.Abs(strategy.Signals[0].Bars.CloseValue);
                 strategy.EntryContracts = (int)(cashToInvest / possibleEntryPrice);

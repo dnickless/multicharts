@@ -296,6 +296,8 @@
     <Compile Include="vb_MovAvg_Cross_LX.Strategy.VB" />
     <Compile Include="vb_MACD_SE.Strategy.VB" />
     <Compile Include="vb_TimeExit_Calndr_SX.Strategy.VB" />
+    <Compile Include="vb_NCT_UpDown_Bar.Indicator.VB" />
+    <Compile Include="vb_Bollinger_Bands_Area.Indicator.VB" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

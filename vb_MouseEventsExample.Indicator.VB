@@ -1,4 +1,5 @@
 ﻿Imports PowerLanguage
+Imports PowerLanguage.Indicator
 Imports System
 
 Namespace PowerLanguage.Indicator

@@ -1,4 +1,5 @@
 ﻿Imports PowerLanguage
+Imports PowerLanguage.Strategy
 Imports System
 
 Namespace PowerLanguage.Strategy

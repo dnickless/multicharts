@@ -1,4 +1,6 @@
-﻿Imports PowerLanguage
+﻿
+Imports PowerLanguage
+Imports PowerLanguage.Indicator
 Imports System
 Imports System.Collections.Generic
 Imports System.Drawing
@@ -56,7 +58,7 @@ Namespace PowerLanguage.Indicator
             If Not MyBase.Bars.LastBarOnChart Then
                 Dim p_levels As Double = (((MyBase.Bars.HighValue - MyBase.Bars.LowValue) / Me.m_price_step) + 1)
                 Dim i As Integer
-                For i = 0 To p_levels - 1
+                For i = 0 To Convert.ToInt32(p_levels) - 1
                     Me.add_volume((MyBase.Bars.LowValue + (i * Me.m_price_step)), (MyBase.Bars.TicksValue / p_levels))
                 Next i
             Else
@@ -80,9 +82,9 @@ Namespace PowerLanguage.Indicator
         End Sub
 
         Private Sub draw_asks(ByVal asks As DOMPrice(), ByVal _dom_model As dom_model, ByVal _gr As Graphics, ByVal maxTotalVol As Double)
-            Const middle As Integer = c_levels / 2 - 1
+            Dim middle As Integer = Convert.ToInt32(c_levels / 2) - 1
 
-            Dim _max_size As Double = asks.Max(Of Integer)(Function(x) x.Size)
+            Dim _max_size As Double = asks.Max(Of Integer)(Function(x) Convert.ToInt32(x.Size))
 
             Dim i As Integer = middle
             Do While (i > Math.Max(middle - asks.Length, 0))
@@ -117,8 +119,8 @@ Namespace PowerLanguage.Indicator
         End Sub
 
         Private Sub draw_bids(ByVal bids As DOMPrice(), ByVal _dom_model As dom_model, ByVal _gr As Graphics, ByVal maxTotalVol As Double)
-            Const middle As Integer = c_levels / 2
-            Dim _max_size As Double = bids.Max(Of Integer)(Function(x) x.Size)
+            Dim middle As Integer = Convert.ToInt32(c_levels / 2)
+            Dim _max_size As Double = bids.Max(Of Integer)(Function(x) Convert.ToInt32(x.Size))
             Dim i As Integer
             For i = middle To Math.Min((bids.Length + middle), c_levels) - 1
                 Dim _rc As RectangleF = _dom_model.Bid(i)

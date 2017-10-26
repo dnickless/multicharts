@@ -1,5 +1,6 @@
 ﻿Imports System.Collections.Generic
 Imports PowerLanguage
+Imports PowerLanguage.Indicator
 Imports System
 Imports System.Drawing
 Imports System.Runtime.CompilerServices

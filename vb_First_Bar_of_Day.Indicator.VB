@@ -1,5 +1,6 @@
-﻿Imports mscorlib
+﻿REM Imports mscorlib
 Imports PowerLanguage
+Imports PowerLanguage.Indicator
 Imports System
 Imports System.Drawing
 
@@ -13,7 +14,7 @@ Namespace PowerLanguage.Indicator
         End Sub
 
         Protected Overrides Sub CalcBar()
-            Dim ReflectorVariable0 As System.Boolean
+            REM Dim ReflectorVariable As System.Boolean
             Dim resolution As EResolution = MyBase.Bars.Info.Resolution.Type
             If ((resolution < EResolution.Day Or EResolution.Volume = resolution Or EResolution.Second = resolution Or resolution > EResolution.Quarter) And Bars.Time.Item(1).Date <> Bars.Time.Item(0).Date) Then
                 Me.Plot1.Set(0, MyBase.Bars.High.Item(0))

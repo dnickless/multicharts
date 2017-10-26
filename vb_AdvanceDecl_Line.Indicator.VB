@@ -1,5 +1,6 @@
 ﻿Imports PowerLanguage
 Imports PowerLanguage.Function
+Imports PowerLanguage.Indicator
 Imports System
 Imports System.Drawing
 

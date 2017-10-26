@@ -1,5 +1,6 @@
 ﻿Imports PowerLanguage
 Imports PowerLanguage.Function
+Imports PowerLanguage.Indicator
 Imports System
 Imports System.Drawing
 Imports System.Runtime.CompilerServices
@@ -17,9 +18,9 @@ Namespace PowerLanguage.Indicator
             Me.m_accdstbuypr.Value = Me.m_lwaccdis1.Item(0)
             Me.Plot1.Set(0, Me.m_accdstbuypr.Value)
             If ((MyBase.Bars.Close.LowestBar(Me.alertlength) = 0) AndAlso PublicFunctions.DoubleGreater(CDbl(Me.m_accdstbuypr.LowestBar(Me.alertlength)), 0)) Then
-                MyBase.Alerts.Alert("Bullish divergence - new low not confirmed", New Object(0  - 1) {})
+                MyBase.Alerts.Alert("Bullish divergence - new low not confirmed", New Object(0 - 1) {})
             ElseIf ((MyBase.Bars.Close.HighestBar(Me.alertlength) = 0) AndAlso PublicFunctions.DoubleGreater(CDbl(Me.m_accdstbuypr.HighestBar(Me.alertlength)), 0)) Then
-                MyBase.Alerts.Alert("Bearish divergence - new high not confirmed", New Object(0  - 1) {})
+                MyBase.Alerts.Alert("Bearish divergence - new high not confirmed", New Object(0 - 1) {})
             End If
         End Sub
 

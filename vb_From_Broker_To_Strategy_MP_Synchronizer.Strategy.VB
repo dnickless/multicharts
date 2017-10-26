@@ -1,4 +1,5 @@
 ﻿Imports PowerLanguage
+Imports PowerLanguage.Strategy
 Imports System
 Imports System.Runtime.CompilerServices
 Imports Microsoft.VisualBasic
@@ -34,14 +35,14 @@ Namespace PowerLanguage.Strategy
                     Dim _place_order As Boolean = False
                     If (Me.m_mp_diff AndAlso Not Me.m_mp_corrected) Then
                         _exit_price = MyBase.Bars.Close.Item(0)
-                        If (DirectCast((Me.m_mp_diff_detected_time - Me.m_mp_diff_time_start), TimeSpan).TotalMilliseconds >= Me.TimeOutMS) Then
+                        If ((Me.m_mp_diff_detected_time - Me.m_mp_diff_time_start).TotalMilliseconds >= Me.TimeOutMS) Then
                             _place_order = True
                             Me.m_mp_corrected = True
                             Me.m_mp_corrected_time_start = Me.m_mp_diff_detected_time
                         End If
                     End If
                     If Me.m_mp_corrected Then
-                        If (DirectCast((Me.m_mp_diff_detected_time - Me.m_mp_corrected_time_start), TimeSpan).TotalMilliseconds >= Me.LatencyMS) Then
+                        If ((Me.m_mp_diff_detected_time - Me.m_mp_corrected_time_start).TotalMilliseconds >= Me.LatencyMS) Then
                             Me.m_mp_corrected_time_start = Me.m_mp_diff_detected_time
                             Me.m_mp_diff = False
                             Me.m_mp_corrected = False

@@ -328,6 +328,8 @@
     <Compile Include="Portfolio_KRatioOptimization.Strategy.CS" />
     <Compile Include="RSIRankEx_MM.Strategy.CS" />
     <Compile Include="RSIRankEx_SignalBase.Strategy.CS" />
+    <Compile Include="NCT_UpDown_Bar.Indicator.CS" />
+    <Compile Include="Bollinger_Bands_Area.Indicator.CS" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
