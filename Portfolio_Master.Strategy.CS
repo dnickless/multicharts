@@ -75,7 +75,7 @@ namespace PowerLanguage.Strategy
 		[Input]
 		public bool DoReinvestment { get; set; }
 		
-		private StringBuilder logStringBuilder = new StringBuilder();
+		private SortedList<DateTime, string> logMessages = new SortedList<DateTime, string>();
 		
 		private void Log(string message, params object[] parameters)
 		{
@@ -91,16 +91,23 @@ namespace PowerLanguage.Strategy
 		{
 			if(!Environment.Optimizing)
 			{
-				var str = string.Format("{0} - {1} - (AutoTrading: {2}, RealTime: {3}) - {4}: {5}", DateTime.Now, Bars.TimeValue, Environment.IsAutoTradingMode ? "YES" : "NO", Environment.IsRealTimeCalc ? "YES" : "NO", "MONEY MGMT", string.Format(message, parameters));
-				
 				if(Environment.IsRealTimeCalc)
 				{
-					logStringBuilder.AppendLine(str);
+					var str = string.Format("{1}: {2}", Bars.TimeValue, string.Format(message, parameters));
+					
+					var messageIndex = logMessages.IndexOfValue(str);
+					if(messageIndex != -1)
+					{
+						logMessages.RemoveAt(messageIndex);
+					}
+					
+					logMessages.Add(DateTime.Now, str);
+					
 					if(sendMail)
 					{
 						DumpLog(true);
 					}
-//					else if(logStringBuilder.Length >= 1000)
+//					else if(logMessages.Count >= 1000)
 //					{
 //						DumpLog(false);
 //					}
@@ -112,13 +119,19 @@ namespace PowerLanguage.Strategy
 		
 		private void DumpLog(bool sendMail)
 		{
+			var logStringBuilder = new StringBuilder();
+			foreach(var kvp in logMessages)
+			{
+				logStringBuilder.AppendLine(string.Format("{0} - {1}", kvp.Key, kvp.Value));
+			}
 			string str = logStringBuilder.ToString();
 			File.AppendAllText(@"c:\temp\logs\_MoneyManagement.txt", str); 
 			if(sendMail)
 			{
 				System.Threading.ThreadPool.QueueUserWorkItem(o => Mail(str));
 			}
-			logStringBuilder.Length = 0;
+			
+			logMessages.Clear();
 		}
 		
 		/*
@@ -149,25 +162,22 @@ namespace PowerLanguage.Strategy
 		
         protected override void CalcBar()
         {
-		    if (!Bars.LastBarOnChart) return;                                                                    // Ignore BackTesting
+		    if (!Bars.LastBarOnChart) return; // Ignore BackTesting
 			
-			//Log("Calculating");
-			
-      		//var time = GetCloseTime() - TimeSpan.FromSeconds(30);                                                 // and calculate the moment when the calculated coefficient will be requested from each trading strategy.
-                                                                                                                    // In this case - 30 seconds before the bar close
+      		//var time = GetCloseTime() - TimeSpan.FromSeconds(30);  // calculate the moment when the calculated coefficient will be requested from each trading strategy.
+                                                                     // In this case - 30 seconds before the bar close
       		var time = triggerTime;
 			int strategiesCount = PortfolioStrategies.Count;
 			
-			if (Bars.Status == EBarState.Close)                                                                   // When the bar closes, it is necessary to clear the collection of coefficients
-			{                                                                                                     // it will be a flag: if the collection is empty, then either the calculation has just started, or
-				                                                                                                  // the new bar has appeared and we need to get new coefficients.
+			if (Bars.Status == EBarState.Close)
+			{
 				LogAndMail("Close event received.");
 				lastClosedDate = Bars.TimeValue.Date;
 				foreach (var strategy in PortfolioStrategies)
 				{
 					strategy.Status = "Waiting for MMS command...";
 				}
-				return;                                                                                           // The request of new values of coefficients will be executed on the new bar already.
+				return;
 			}
 			
 			TimeSpan currentTime = DateTime.Now.TimeOfDay;
@@ -232,6 +242,22 @@ namespace PowerLanguage.Strategy
 		        }
 			}
 			
+		   	double accountEquity = 0;
+			if (Environment.IsAutoTradingMode)
+			{
+				TradeManager.ProcessEvents();
+				foreach(var account in TradeManager.TradingData.Accounts.Items)
+				{
+					accountEquity += account.Equity != null ? (double)account.Equity : 0.0;
+				}
+			}
+			else
+			{
+				accountEquity = InitialCapital + Portfolio.NetProfit;
+			}
+			
+			Log("Assumed account equity is: " + accountEquity);
+			
 			double sumInvested = 0.0;
 			foreach (var strategy in listOfStrategiesWithBuyOrders)
             {
@@ -239,7 +265,7 @@ namespace PowerLanguage.Strategy
 				double availableCash = 0.0;
 				if(DoReinvestment)
 				{
-					availableCash = Math.Max(0, InitialCapital + changeInMoney + Portfolio.NetProfit - Portfolio.InvestedCapital);
+					availableCash = Math.Min(accountEquity, Math.Max(0, accountEquity + changeInMoney - Portfolio.InvestedCapital));
 				}
 				else
 				{
@@ -247,13 +273,13 @@ namespace PowerLanguage.Strategy
 					availableCash = Math.Max(0, Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital));
 				}
 				
-				double cashToInvest = availableCash / 100.0 * Portfolio.MaxRiskEquityPerPosPercent * (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR));
+				double cashToInvest = availableCash * (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR));
 				// limit to 33% max. exposure per deal
-				cashToInvest = Math.Min(cashToInvest, (InitialCapital + changeInMoney + Portfolio.NetProfit) / 3.0);
+				cashToInvest = Math.Min(cashToInvest, (accountEquity + changeInMoney) / 3.0);
 				sumInvested += cashToInvest;
 				var possibleEntryPrice = Math.Abs(strategy.Signals[0].Bars.CloseValue);
                 strategy.EntryContracts = (int)(cashToInvest / possibleEntryPrice);
-				Log("({0}: {1} - {2}) / 100.0 * {3} * {4} = {5}$ --> {6}# @ assumed price {7}$ --- available cash: {8}, SUM(CRTDR): {9}", strategy.Signals[0].Bars.Info.Name, InitialCapital, Portfolio.InvestedCapital, Portfolio.MaxRiskEquityPerPosPercent, (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash, sumCRTDR);
+				Log("{0}: (Account balance: {1}) - (Invested capital: {2})) * (Weighted CRTDR: {3}) = {4}$ --> {5}# @ assumed price {6}$ --- available cash: {7}, SUM(CRTDR): {8}", strategy.Signals[0].Bars.Info.Name, accountEquity, Portfolio.InvestedCapital, (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash, sumCRTDR);
 				if(strategy.EntryContracts > 0)
 				{
 					strategy.PortfolioData[PortfolioDataKeys.NumberOfShares] = strategy.EntryContracts;
@@ -261,7 +287,7 @@ namespace PowerLanguage.Strategy
 				}
 				else
 				{
-					Log(Bars.TimeValue.ToString() + " " + strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
+					Log(strategy.Signals[0].Bars.Info.Name + " OUT OF MONEY, CANNOT BUY.");
 				}
             }
 			
@@ -277,11 +303,11 @@ namespace PowerLanguage.Strategy
 		}
 		
 		private static string fromPassword = System.IO.File.ReadAllText(@"C:\temp\do_not_delete\asdf.txt");
-		private static MailAddress fromAddress = new MailAddress("ramanddan.trading@gmail.com", "RamAndDan Trading");
+		private static MailAddress fromAddress = new MailAddress("ramanddan.trading@gmail.com", "RamDRom Trading");
 		
 		private void Mail(string message)
 		{
-			if(Environment.IsRealTimeCalc)
+			if(Environment.IsRealTimeCalc/* && DateTime.Now > DateTime.Now.Date.AddHours(15)*/)
 			{
 				try
 				{
@@ -303,6 +329,7 @@ namespace PowerLanguage.Strategy
 					{
 						mailMessage.To.Add("ramon@winter-berg.com");
 						mailMessage.To.Add("daniel.hegener@gmx.net");
+						mailMessage.To.Add("andermatt.roman@gmail.com");
 						smtp.Send(mailMessage);
 					}
 				}

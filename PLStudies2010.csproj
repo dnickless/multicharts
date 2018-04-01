@@ -330,6 +330,7 @@
     <Compile Include="RSIRankEx_SignalBase.Strategy.CS" />
     <Compile Include="NCT_UpDown_Bar.Indicator.CS" />
     <Compile Include="Bollinger_Bands_Area.Indicator.CS" />
+    <Compile Include="Test_GetAccountInfo.Strategy.CS" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

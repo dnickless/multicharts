@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -111,7 +112,7 @@ namespace PowerLanguage.Strategy {
 			}
 		}
         
-		private StringBuilder logStringBuilder = new StringBuilder();
+		private SortedList<DateTime, string> logMessages = new SortedList<DateTime, string>();
 		
 		private void Log(string message, params object[] parameters)
 		{
@@ -127,11 +128,18 @@ namespace PowerLanguage.Strategy {
 		{
 			if(!Environment.Optimizing)
 			{
-				var str = string.Format("{0} - {1} - (AutoTrading: {2}, RealTime: {3}) - {4}: {5}", DateTime.Now, Bars.TimeValue, Environment.IsAutoTradingMode ? "YES" : "NO", Environment.IsRealTimeCalc ? "YES" : "NO", Bars.Info.Name, string.Format(message, parameters));
-				
 				if(Environment.IsRealTimeCalc)
 				{
-					logStringBuilder.AppendLine(str);
+					var str = string.Format("{1} - {2}: {3}", Bars.TimeValue, Bars.Info.Name, string.Format(message, parameters));
+					
+					var messageIndex = logMessages.IndexOfValue(str);
+					if(messageIndex != -1)
+					{
+						logMessages.RemoveAt(messageIndex);
+					}
+					
+					logMessages.Add(DateTime.Now, str);
+					
 					if(sendMail)
 					{
 						DumpLog(true);
@@ -148,16 +156,23 @@ namespace PowerLanguage.Strategy {
         
 		private void DumpLog(bool sendMail)
 		{
+			var logStringBuilder = new StringBuilder();
+			foreach(var kvp in logMessages)
+			{
+				logStringBuilder.AppendLine(string.Format("{0} - {1}", kvp.Key, kvp.Value));
+			}
 			string str = logStringBuilder.ToString();
 			File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", str); 
 			if(sendMail)
 			{
 				System.Threading.ThreadPool.QueueUserWorkItem(o => Mail(str));
 			}
-			logStringBuilder.Length = 0;
+			
+			logMessages.Clear();
 		}
 		
-        protected override void CalcBar(){
+        protected override void CalcBar()
+		{
 			if (!Environment.IsRealTimeCalc) // There is no need to calculate on historical data, that is why backtesting is ignored
 			{
 				// As soon as backtesting is finished, the signal gets immediately calculated by the timer.
@@ -294,9 +309,10 @@ namespace PowerLanguage.Strategy {
 					break;
 			}
 
-			if (Bars.Status == EBarState.Close)                                                                         // During calculation at the bar close, global variables, used to exchange messages between the current signal and MM-signal
-			{                                                                                                           // should be zeroed
-				Log(lastOrderGenerated == DateTime.Now.Date, "Close event received.");
+			// During calculation at the bar close, global variables, used to exchange messages between the current signal and MM-signal should be reset
+			if (Bars.Status == EBarState.Close)                                                                         
+			{
+				Log(lastOrderGenerated == DateTime.Now.Date, "Close event received."); // only send email output if trade has been sent on this day
 				MyPortfolioData[PortfolioDataKeys.CRTDR] = 1.0;
 				MyPortfolioData[PortfolioDataKeys.MoneyManagementCommand] = StrategyEvents.None;
 				MyPortfolioData[PortfolioDataKeys.IWantToBuy] = false;
@@ -364,9 +380,16 @@ namespace PowerLanguage.Strategy {
 //			return false;
 //		}
 		
+		protected override void OnOrderRejected(EOrderAction action, OrderCategory category, int quantity, double stopPrice, double limitPrice)
+		{
+			LogAndMail("Order rejected: {0} {1} ({2} @ {3}/{4}).", action, quantity, category, stopPrice, limitPrice);
+			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));                                            // If there were no instructions from MM-signal, we will keep waiting for them.
+		}
+		
 		protected override void OnBrokerStategyOrderFilled(bool isBuy, int quantity, double avgFillPrice)
 		{
-			LogAndMail("{0} order filled. Quantity: {1}, avg. fill price: {2}. MarketPositionAtBroker={3}, AvgEntryPriceAtBroker={4}, MarketPositionAtBrokerForTheStrategy={5}, AvgEntryPriceAtBrokerForTheStrategy={6}, MarketPosition={7}, AvgEntryPrice={8}", isBuy ? "BUY" : "SELL", quantity, avgFillPrice, StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker, StrategyInfo.MarketPositionAtBrokerForTheStrategy, StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy, StrategyInfo.MarketPosition, StrategyInfo.AvgEntryPrice);
+			double pAndL = quantity * (avgFillPrice - StrategyInfo.AvgEntryPriceAtBroker);
+			LogAndMail("Order filled: {0} {1} @ avg. {2} (==> {3}). MarketPositionAtBroker={4}, AvgEntryPriceAtBroker={5}", isBuy ? "BUY" : "SELL", quantity, avgFillPrice, isBuy ? "Investing " + quantity * avgFillPrice : ("P/L " + pAndL + (pAndL > 0 ? " - yeah, baby!" : " - ouch!")), StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker);
 			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));                                            // If there were no instructions from MM-signal, we will keep waiting for them.
 		}
 		
@@ -381,11 +404,11 @@ namespace PowerLanguage.Strategy {
         }
 		
 		private static string fromPassword = System.IO.File.ReadAllText(@"C:\temp\do_not_delete\asdf.txt");
-		private static MailAddress fromAddress = new MailAddress("ramanddan.trading@gmail.com", "RamAndDan Trading");
+		private static MailAddress fromAddress = new MailAddress("ramanddan.trading@gmail.com", "RamDRom Trading");
 		
 		private void Mail(string message)
 		{
-			if(Environment.IsRealTimeCalc)
+			if(Environment.IsRealTimeCalc/* && DateTime.Now > DateTime.Now.Date.AddHours(15)*/)
 			{
 				try
 				{
@@ -407,6 +430,7 @@ namespace PowerLanguage.Strategy {
 					{
 						mailMessage.To.Add("ramon@winter-berg.com");
 						mailMessage.To.Add("daniel.hegener@gmx.net");
+						mailMessage.To.Add("andermatt.roman@gmail.com");
 						smtp.Send(mailMessage);
 					}
 				}
