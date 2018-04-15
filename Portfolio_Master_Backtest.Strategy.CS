@@ -88,7 +88,7 @@ namespace PowerLanguage.Strategy
                 logStringBuilder.AppendLine(string.Format("{0} - {1}", kvp.Value, kvp.Key));
             }
             string str = logStringBuilder.ToString();
-            File.AppendAllText(@"c:\temp\logs\_MoneyManagement.txt", str);
+            File.AppendAllText(@"c:\temp\logs_backtest\_MoneyManagement.txt", str);
 
             logMessages.Clear();
         }

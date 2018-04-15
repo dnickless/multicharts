@@ -130,7 +130,7 @@ namespace PowerLanguage.Strategy
                 logStringBuilder.AppendLine(string.Format("{0} - {1}", kvp.Value, kvp.Key));
             }
             string str = logStringBuilder.ToString();
-            File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", str);
+            File.AppendAllText(@"c:\temp\logs_backtest\" + Bars.Info.Name + ".txt", str);
 
             logMessages.Clear();
         }
