@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -116,7 +117,7 @@ namespace PowerLanguage.Strategy
             }
         }
 
-        private SortedList<DateTime, string> logMessages = new SortedList<DateTime, string>();
+        private readonly Dictionary<string, DateTime> logMessages = new Dictionary<string, DateTime>();
 
         private void Log(string message, params object[] parameters)
         {
@@ -134,36 +135,37 @@ namespace PowerLanguage.Strategy
             {
                 if (Environment.IsRealTimeCalc)
                 {
-                    var str = string.Format("{0} - {1}: {2}", Bars.TimeValue, Bars.Info.Name, string.Format(message, parameters));
+					try
+					{
+	                    var str = string.Format("{0} - {1}: {2}", Bars.TimeValue, Bars.Info.Name, string.Format(message, parameters));
 
-                    var messageIndex = logMessages.IndexOfValue(str);
-                    if (messageIndex != -1)
-                    {
-                        logMessages.RemoveAt(messageIndex);
-                    }
+						Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
 
-                    logMessages.Add(DateTime.Now, str);
+	                    logMessages[str] = DateTime.Now;
 
-                    if (sendMail)
-                    {
-                        DumpLog(true);
-                    }
-                    //					else if(logStringBuilder.Length >= 1000)
-                    //					{
-                    //						DumpLog(false);
-                    //					}
+	                    if (sendMail)
+	                    {
+	                        DumpLog(true);
+	                    }
+	                    //					else if(logStringBuilder.Length >= 1000)
+	                    //					{
+	                    //						DumpLog(false);
+	                    //					}
+					}
+					catch (Exception e)
+					{
+						Output.WriteLine(e.ToString());
+					}
                 }
-
-                //Output.WriteLine(str);
             }
         }
 
         private void DumpLog(bool sendMail)
         {
             var logStringBuilder = new StringBuilder();
-            foreach (var kvp in logMessages)
+            foreach (var kvp in logMessages.OrderBy(kvp => kvp.Value))
             {
-                logStringBuilder.AppendLine(string.Format("{0} - {1}", kvp.Key, kvp.Value));
+                logStringBuilder.AppendLine(string.Format("{0} - {1}", kvp.Value, kvp.Key));
             }
             string str = logStringBuilder.ToString();
             File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", str);

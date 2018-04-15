@@ -324,7 +324,6 @@
     <Compile Include="Slope.Strategy.CS" />
     <Compile Include="XAverageThatWorks.Function.CS" />
     <Compile Include="Test.Strategy.CS" />
-    <Compile Include="DipTrader.Strategy.CS" />
     <Compile Include="Portfolio_KRatioOptimization.Strategy.CS" />
     <Compile Include="RSIRankEx_MM.Strategy.CS" />
     <Compile Include="RSIRankEx_SignalBase.Strategy.CS" />
