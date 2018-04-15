@@ -324,12 +324,14 @@
     <Compile Include="Slope.Strategy.CS" />
     <Compile Include="XAverageThatWorks.Function.CS" />
     <Compile Include="Test.Strategy.CS" />
+    <Compile Include="CRTDR_Signal_Backtest.Strategy.CS" />
     <Compile Include="Portfolio_KRatioOptimization.Strategy.CS" />
     <Compile Include="RSIRankEx_MM.Strategy.CS" />
     <Compile Include="RSIRankEx_SignalBase.Strategy.CS" />
     <Compile Include="NCT_UpDown_Bar.Indicator.CS" />
     <Compile Include="Bollinger_Bands_Area.Indicator.CS" />
     <Compile Include="Test_GetAccountInfo.Strategy.CS" />
+    <Compile Include="Portfolio_Master_Backtest.Strategy.CS" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
