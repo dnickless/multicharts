@@ -235,6 +235,7 @@ namespace PowerLanguage.Strategy
             {
                 // WE ARE LONG
                 GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
+                GeneratePercentTrailing(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * 0.01, 50);
 
                 //var barsSinceEntry = Bars.CurrentBar - CurrentPosition.OpenTrades[0].EntryOrder.BarNumber;
                 var barsSinceEntry = Math.Min(1, this.BarsSinceEntry());
