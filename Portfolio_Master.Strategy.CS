@@ -44,6 +44,8 @@ namespace PowerLanguage.Strategy
             : base(_ctx)
         {
             SkalpingFactor = 1.1;
+			TriggerTime = "15:58:30";
+			DoReinvestment = true;
         }
 
         protected override void Create()
@@ -159,12 +161,20 @@ namespace PowerLanguage.Strategy
             throw new Exception("Can't calculate close time.");  // If the resolution is not time-based, it is not possible to determine bar close time.
         }
 
+		protected override void OnRecalcLastBarAfterEvent()
+		{
+            Log("Requesting latest information from broker.");
+			TradeManager.ProcessEvents();
+		}
+		
         DateTime lastClosedDate;
 
-        protected override void CalcBar()
+		protected override void CalcBar()
         {
             if (!Bars.LastBarOnChart) return; // Ignore BackTesting
 
+			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(15));
+			
             //var time = GetCloseTime() - TimeSpan.FromSeconds(30);  // calculate the moment when the calculated coefficient will be requested from each trading strategy.
             // In this case - 30 seconds before the bar close
             var time = triggerTime;
@@ -236,7 +246,7 @@ namespace PowerLanguage.Strategy
                         {
                             // adjust previously calculated values
                             listOfStrategiesWithBuyOrders.Remove(strategy);
-                            Log("Removing because of CRTDR value {0} which is below the calculated cut-off value of {1}", crtdr, cutOffCrtdr);
+                            Log("Removing {0} because of CRTDR value {1} which is above the calculated cut-off value of {2}", strategy.Signals[0].Bars.Info.Name, crtdr, 1.0 - cutOffCrtdr);
                             sumCRTDR -= (1.0 - crtdr);
                         }
                     }
@@ -246,12 +256,17 @@ namespace PowerLanguage.Strategy
             double accountEquity = 0;
             if (Environment.IsAutoTradingMode)
             {
-                TradeManager.ProcessEvents();
                 foreach (var account in TradeManager.TradingData.Accounts.Items)
                 {
                     accountEquity += account.Equity ?? 0.0;
                     Log(account.ToString());
                 }
+				
+				if(accountEquity == 0) // for some reason this seems to happen sometimes
+				{
+					accountEquity = 65000;
+                    Log("For some reason the account list appears empty again. We set the assumed equity to " + accountEquity);
+				}
             }
             else
             {
