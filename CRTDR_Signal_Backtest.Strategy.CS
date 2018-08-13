@@ -33,6 +33,9 @@ namespace PowerLanguage.Strategy
         public int RsiLengthUp { get; set; }
 
         [Input]
+        public double TakeProfitLevel { get; set; }
+
+        [Input]
         public double LongLimitUp { get; set; }
 
         [Input]
@@ -102,23 +105,23 @@ namespace PowerLanguage.Strategy
         {
             if (!Environment.Optimizing)
             {
-				try
-				{
+                try
+                {
                     var str = string.Format("{0} - {1}: {2}", Bars.TimeValue, Bars.Info.Name, string.Format(message, parameters));
 
-					Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
+                    Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
 
                     logMessages[str] = DateTime.Now;
 
                     if(logMessages.Count >= 1000)
                     {
-                    	DumpLog();
+                        DumpLog();
                     }
-				}
-				catch (Exception e)
-				{
-					Output.WriteLine(e.ToString());
-				}
+                }
+                catch (Exception e)
+                {
+                    Output.WriteLine(e.ToString());
+                }
             }
         }
 
@@ -141,7 +144,7 @@ namespace PowerLanguage.Strategy
             MyPortfolioData[PortfolioDataKeys.MoneyManagementCommand] = StrategyEvents.None;
             MyPortfolioData[PortfolioDataKeys.IWantToBuy] = false;
             MyPortfolioData[PortfolioDataKeys.IWantToSell] = false;
-			
+            
             Log("Calc Reason: {0}, Bar Status: {1}, Open: {2}, High: {3}, Low: {4}, Close: {5}", Environment.CalcReason, Bars.Status, Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue);
 
             var high = Bars.HighValue;
@@ -181,11 +184,13 @@ namespace PowerLanguage.Strategy
             {
                 // WE ARE LONG
                 GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
-
+                GeneratePercentTrailing(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * 0.01, 50);
+                
                 var barsSinceEntry = Math.Min(1, this.BarsSinceEntry());
                 var openProfit = CurrentPosition.OpenProfit;
                 var signalUp = GetSignalUp(crtdr, rsi, trend);
                 var rsiSellLevel = GetRsiSellLevel(trend);
+                Log(CurrentPosition.Value.ToString() + " - " + openProfit.ToString());
                 Log("Should we sell? Bars since entry: {0}, open profit: {1}, signal up: {2}, rsi: {3}, rsiSellLevel: {4}", barsSinceEntry, openProfit, signalUp, rsi, rsiSellLevel);
 
                 // close non-profitable positions straight away because we have picked a loser and need to free up money for new deals
@@ -193,21 +198,28 @@ namespace PowerLanguage.Strategy
                 {
                     Log("Loser cut! Assumed loss: {0}$", CurrentPosition.OpenProfit);
                     MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
-                    sellOrder.Send();
+                    sellOrder.Send("Loser cut");
+                    Log("Generated Sell.");
+                }
+                else if ((CurrentPosition.Value * close) / (CurrentPosition.Value * close - openProfit) > TakeProfitLevel)
+                {
+                    Log("Take profit! Assuming to cash in ~{0}$", CurrentPosition.OpenProfit);
+                    MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
+                    sellOrder.Send("Take profit");
                     Log("Generated Sell.");
                 }
                 else if (barsSinceEntry > 2 && !signalUp)
                 {
                     Log("SELL! Bars since entry > 2 and no up signal. Assuming to cash in ~{0}$", CurrentPosition.OpenProfit);
                     MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
-                    sellOrder.Send();
+                    sellOrder.Send("barsSinceEntry > 2 && !signalUp");
                     Log("Generated Sell.");
                 }
                 else if (rsi > rsiSellLevel)
                 {
                     Log("SELL! RSI condition satisfied, we take the profit (~{0}$) and run!", CurrentPosition.OpenProfit);
                     MyPortfolioData[PortfolioDataKeys.IWantToSell] = true;
-                    sellOrder.Send();
+                    sellOrder.Send("rsi > rsiSellLevel");
                     Log("Generated Sell.");
                 }
             }
