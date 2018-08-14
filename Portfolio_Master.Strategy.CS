@@ -44,8 +44,8 @@ namespace PowerLanguage.Strategy
             : base(_ctx)
         {
             SkalpingFactor = 1.1;
-			TriggerTime = "15:58:30";
-			DoReinvestment = true;
+            TriggerTime = "15:58:30";
+            DoReinvestment = true;
         }
 
         protected override void Create()
@@ -95,27 +95,27 @@ namespace PowerLanguage.Strategy
             {
                 if (Environment.IsRealTimeCalc)
                 {
-					try
-					{
-	                    var str = string.Format("{0}: {1}", Bars.TimeValue, string.Format(message, parameters));
+                    try
+                    {
+                        var str = string.Format("{0}: {1}", Bars.TimeValue, string.Format(message, parameters));
 
-	                    Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
+                        Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
 
-					    logMessages[str] = DateTime.Now;
+                        logMessages[str] = DateTime.Now;
 
                         if (sendMail)
-	                    {
-	                        DumpLog(true);
-	                    }
-	                    //					else if(logMessages.Count >= 1000)
-	                    //					{
-	                    //						DumpLog(false);
-	                    //					}
-					}
-					catch (Exception e)
-					{
-						Output.WriteLine(e.ToString());
-					}
+                        {
+                            DumpLog(true);
+                        }
+                        //                    else if(logMessages.Count >= 1000)
+                        //                    {
+                        //                        DumpLog(false);
+                        //                    }
+                    }
+                    catch (Exception e)
+                    {
+                        Output.WriteLine(e.ToString());
+                    }
                 }
             }
         }
@@ -138,8 +138,8 @@ namespace PowerLanguage.Strategy
         }
 
         /*
-		* This method returns current bar close time or session close, depending on the resolution
-		*/
+        * This method returns current bar close time or session close, depending on the resolution
+        */
         protected TimeSpan GetCloseTime()
         {
             switch (Bars.Request.Resolution.Type)
@@ -161,20 +161,20 @@ namespace PowerLanguage.Strategy
             throw new Exception("Can't calculate close time.");  // If the resolution is not time-based, it is not possible to determine bar close time.
         }
 
-		protected override void OnRecalcLastBarAfterEvent()
-		{
+        protected override void OnRecalcLastBarAfterEvent()
+        {
             Log("Requesting latest information from broker.");
-			TradeManager.ProcessEvents();
-		}
-		
+            TradeManager.ProcessEvents();
+        }
+        
         DateTime lastClosedDate;
 
-		protected override void CalcBar()
+        protected override void CalcBar()
         {
             if (!Bars.LastBarOnChart) return; // Ignore BackTesting
 
-			ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(15));
-			
+            ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(15));
+            
             //var time = GetCloseTime() - TimeSpan.FromSeconds(30);  // calculate the moment when the calculated coefficient will be requested from each trading strategy.
             // In this case - 30 seconds before the bar close
             var time = triggerTime;
@@ -213,7 +213,7 @@ namespace PowerLanguage.Strategy
                 {
                     listOfStrategiesWithBuyOrders.Add(strategy);
                     crtdrs.Add(crtdr);
-                    sumCRTDR += 1.0 - crtdr;
+                    sumCRTDR += crtdr;
                 }
                 var wantsToSell = (bool)(strategy.PortfolioData[PortfolioDataKeys.IWantToSell] ?? false);
                 if (wantsToSell)
@@ -233,21 +233,24 @@ namespace PowerLanguage.Strategy
                 var average = crtdrs.Average();
                 var sumOfSquaresOfDifferences = crtdrs.Sum(val => (val - average) * (val - average));
                 var stdDev = Math.Sqrt(sumOfSquaresOfDifferences / crtdrs.Count);
-
                 var meanCRTDR = sumCRTDR / listOfStrategiesWithBuyOrders.Count;
+                var cutOffCrtdr = meanCRTDR + stdDev * SkalpingFactor;
+                Log("Calculated CRTDR std. dev. is {0}, mean is {1} sum of all buying signals is {2} so cut off is {3}", stdDev, meanCRTDR, sumCRTDR, cutOffCrtdr);
+                
                 foreach (var strategy in listOfStrategiesWithBuyOrders.ToList() /* clone list because we're modifying it below */)
                 {
                     bool wantsToBuy = (bool)strategy.PortfolioData[PortfolioDataKeys.IWantToBuy];
                     if (wantsToBuy)
                     {
                         var crtdr = (double)strategy.PortfolioData[PortfolioDataKeys.CRTDR];
-                        var cutOffCrtdr = meanCRTDR + stdDev * SkalpingFactor;
-                        if (1.0 - crtdr < cutOffCrtdr)
+                        Log("Symbol {0} has CRTDR {1}", strategy.Signals[0].Bars.Info.Name, crtdr);
+                        if (crtdr > cutOffCrtdr)
                         {
                             // adjust previously calculated values
                             listOfStrategiesWithBuyOrders.Remove(strategy);
-                            Log("Removing {0} because of CRTDR value {1} which is above the calculated cut-off value of {2}", strategy.Signals[0].Bars.Info.Name, crtdr, 1.0 - cutOffCrtdr);
-                            sumCRTDR -= (1.0 - crtdr);
+                            Log("Removing {0} because of CRTDR value {1} which is above the calculated cut-off value of {2}", strategy.Signals[0].Bars.Info.Name, crtdr, cutOffCrtdr);
+                            strategy.EntryContracts = 0;
+                            sumCRTDR -= crtdr;
                         }
                     }
                 }
@@ -261,12 +264,12 @@ namespace PowerLanguage.Strategy
                     accountEquity += account.Equity ?? 0.0;
                     Log(account.ToString());
                 }
-				
-				if(accountEquity == 0) // for some reason this seems to happen sometimes
-				{
-					accountEquity = 65000;
+                
+                if(accountEquity == 0) // for some reason this seems to happen sometimes
+                {
+                    accountEquity = 65000;
                     Log("For some reason the account list appears empty again. We set the assumed equity to " + accountEquity);
-				}
+                }
             }
             else
             {
@@ -310,14 +313,14 @@ namespace PowerLanguage.Strategy
 
             Log("Distributed money: {0}$", sumInvested);
             lastClosedDate = Bars.TimeValue.Date;
-            //			if(Environment.Optimizing)
-            //			{
-            //				var result = m_KRatio.Value;
-            //				if (Bars.LastBarOnChart)
-            //				{
-            //	            	CustomFitnessValue = result;
-            //				}
-            //			}
+            //            if(Environment.Optimizing)
+            //            {
+            //                var result = m_KRatio.Value;
+            //                if (Bars.LastBarOnChart)
+            //                {
+            //                    CustomFitnessValue = result;
+            //                }
+            //            }
         }
 
         private static readonly string FromPassword = File.ReadAllText(@"C:\temp\do_not_delete\asdf.txt");
