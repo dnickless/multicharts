@@ -57,23 +57,23 @@ namespace PowerLanguage.Strategy
         {
             if (!Environment.Optimizing)
             {
-				try
-				{
+                try
+                {
                     var str = string.Format("{0}: {1}", Bars.TimeValue, string.Format(message, parameters));
 
                     Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
 
-				    logMessages[str] = DateTime.Now;
+                    logMessages[str] = DateTime.Now;
 
                     if(logMessages.Count >= 1000)
                     {
-                    	DumpLog();
+                        DumpLog();
                     }
-				}
-				catch (Exception e)
-				{
-					Output.WriteLine(e.ToString());
-				}
+                }
+                catch (Exception e)
+                {
+                    Output.WriteLine(e.ToString());
+                }
             }
         }
 
@@ -91,8 +91,8 @@ namespace PowerLanguage.Strategy
         }
 
         /*
-		* This method returns current bar close time or session close, depending on the resolution
-		*/
+        * This method returns current bar close time or session close, depending on the resolution
+        */
         protected TimeSpan GetCloseTime()
         {
             switch (Bars.Request.Resolution.Type)
@@ -158,20 +158,20 @@ namespace PowerLanguage.Strategy
                 var meanCRTDR = sumCRTDR / listOfStrategiesWithBuyOrders.Count;
                 var cutOffCrtdr = meanCRTDR + stdDev * SkalpingFactor;
                 Log("Calculated CRTDR std. dev. is {0}, mean is {1} sum of all buying signals is {2} so cut off is {3}", stdDev, meanCRTDR, sumCRTDR, cutOffCrtdr);
-				
+                
                 foreach (var strategy in listOfStrategiesWithBuyOrders.ToList() /* clone list because we're modifying it below */)
                 {
                     bool wantsToBuy = (bool)strategy.PortfolioData[PortfolioDataKeys.IWantToBuy];
                     if (wantsToBuy)
                     {
                         var crtdr = (double)strategy.PortfolioData[PortfolioDataKeys.CRTDR];
-						Log("Symbol {0} has CRTDR {1}", strategy.Signals[0].Bars.Info.Name, crtdr);
+                        Log("Symbol {0} has CRTDR {1}", strategy.Signals[0].Bars.Info.Name, crtdr);
                         if (crtdr > cutOffCrtdr)
                         {
                             // adjust previously calculated values
                             listOfStrategiesWithBuyOrders.Remove(strategy);
                             Log("Removing {0} because of CRTDR value {1} which is above the calculated cut-off value of {2}", strategy.Signals[0].Bars.Info.Name, crtdr, cutOffCrtdr);
-							strategy.EntryContracts = 0;
+                            strategy.EntryContracts = 0;
                             sumCRTDR -= crtdr;
                         }
                     }
@@ -195,8 +195,8 @@ namespace PowerLanguage.Strategy
             foreach (var strategy in listOfStrategiesWithBuyOrders)
             {
                 var crtdr = (double)strategy.PortfolioData[PortfolioDataKeys.CRTDR];
-				double weightedCRTDR = sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : ((sumCRTDR - crtdr) / sumCRTDR);
-				double cashToInvest = listOfStrategiesWithBuyOrders.Count == 1 ? availableCash : (availableCash / (listOfStrategiesWithBuyOrders.Count - 1) * weightedCRTDR);
+                double weightedCRTDR = sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : ((sumCRTDR - crtdr) / sumCRTDR);
+                double cashToInvest = listOfStrategiesWithBuyOrders.Count == 1 ? availableCash : (availableCash / (listOfStrategiesWithBuyOrders.Count - 1) * weightedCRTDR);
                 // limit to 33% max. exposure per deal
                 cashToInvest = Math.Min(cashToInvest, (accountEquity + changeInMoney) / 3.0);
                 sumInvested += cashToInvest;
@@ -212,12 +212,12 @@ namespace PowerLanguage.Strategy
             Log("Distributed money: {0}$", sumInvested);
             if(Environment.Optimizing)
             {
-            	var result = m_KRatio.Value;
-				if (Bars.LastBarOnChart)
-				{
-	            	CustomFitnessValue = result;
-				}
-			}
+                var result = m_KRatio.Value;
+                if (Bars.LastBarOnChart)
+                {
+                    CustomFitnessValue = result;
+                }
+            }
         }
     }
 }
