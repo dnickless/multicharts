@@ -293,7 +293,7 @@ namespace PowerLanguage.Strategy
                     availableCash = Math.Max(0, Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital));
                 }
 
-                double cashToInvest = availableCash * (sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : (1.0 - crtdr) / sumCRTDR);
+                double cashToInvest = availableCash * (sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : (sumCRTDR - crtdr) / sumCRTDR);
                 // limit to 33% max. exposure per deal
                 cashToInvest = Math.Min(cashToInvest, (accountEquity + changeInMoney) / 3.0);
                 sumInvested += cashToInvest;
