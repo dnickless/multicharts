@@ -161,20 +161,12 @@ namespace PowerLanguage.Strategy
             throw new Exception("Can't calculate close time.");  // If the resolution is not time-based, it is not possible to determine bar close time.
         }
 
-        protected override void OnRecalcLastBarAfterEvent()
-        {
-            Log("Requesting latest information from broker.");
-            TradeManager.ProcessEvents();
-        }
-        
         DateTime lastClosedDate;
 
         protected override void CalcBar()
         {
             if (!Bars.LastBarOnChart) return; // Ignore BackTesting
 
-            ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(15));
-            
             //var time = GetCloseTime() - TimeSpan.FromSeconds(30);  // calculate the moment when the calculated coefficient will be requested from each trading strategy.
             // In this case - 30 seconds before the bar close
             var time = triggerTime;
@@ -259,7 +251,8 @@ namespace PowerLanguage.Strategy
             double accountEquity = 0;
             if (Environment.IsAutoTradingMode)
             {
-                foreach (var account in TradeManager.TradingData.Accounts.Items)
+                TradeManager.ProcessEvents();
+				foreach (var account in TradeManager.TradingData.Accounts.Items)
                 {
                     accountEquity += account.Equity ?? 0.0;
                     Log(account.ToString());
