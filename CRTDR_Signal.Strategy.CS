@@ -132,7 +132,7 @@ namespace PowerLanguage.Strategy
             if(_lastLogEntry <= now || _forceMailLog)
             {
                 _throttledLoggingActive = true;
-                double frequency = now.TimeOfDay > new TimeSpan(15, 57, 00) && now.TimeOfDay < new TimeSpan(16, 00, 00) ? 0.25 : 1;
+                double frequency = now.TimeOfDay > new TimeSpan(15, 57, 00) && now.TimeOfDay < new TimeSpan(16, 00, 00) ? 0.25 : 5;
                 _lastLogEntry = now.AddMinutes(frequency);
             }
             else
@@ -228,10 +228,6 @@ namespace PowerLanguage.Strategy
                 // It is necessary to calculate the CRTDR and other values which can be requested by MM-signal at any moment.
                 ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));
                 return;
-            }
-            else
-            {
-                System.Diagnostics.Debugger.Launch();
             }
 
             UpdateLogThrottling();
