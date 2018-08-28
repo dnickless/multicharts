@@ -252,7 +252,7 @@ namespace PowerLanguage.Strategy
             if (Environment.IsAutoTradingMode)
             {
                 TradeManager.ProcessEvents();
-				foreach (var account in TradeManager.TradingData.Accounts.Items)
+                foreach (var account in TradeManager.TradingData.Accounts.Items)
                 {
                     accountEquity += account.Equity ?? 0.0;
                     Log(account.ToString());
@@ -286,13 +286,14 @@ namespace PowerLanguage.Strategy
                     availableCash = Math.Max(0, Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital));
                 }
 
-                double cashToInvest = availableCash * (sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : (sumCRTDR - crtdr) / sumCRTDR);
+                double weightedCRTDR = (sumCRTDR == 0.0 ? (1.0 / (double)listOfStrategiesWithBuyOrders.Count) : (crtdr / sumCRTDR));
+                double cashToInvest = availableCash * weightedCRTDR;
                 // limit to 33% max. exposure per deal
                 cashToInvest = Math.Min(cashToInvest, (accountEquity + changeInMoney) / 3.0);
                 sumInvested += cashToInvest;
                 var possibleEntryPrice = Math.Abs(strategy.Signals[0].Bars.CloseValue);
                 strategy.EntryContracts = (int)(cashToInvest / possibleEntryPrice);
-                Log("{0}: (Account balance: {1}) - (Invested capital: {2})) * (Weighted CRTDR: {3}) = {4}$ --> {5}# @ assumed price {6}$ --- available cash: {7}, SUM(CRTDR): {8}", strategy.Signals[0].Bars.Info.Name, accountEquity, Portfolio.InvestedCapital, (sumCRTDR == 0.0 ? 1.0 / (double)listOfStrategiesWithBuyOrders.Count : ((1.0 - crtdr) / sumCRTDR)), cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash, sumCRTDR);
+                Log("{0}: (Account balance: {1}) - (Invested capital: {2})) * (Weighted CRTDR: {3}) = {4}$ --> {5}# @ assumed price {6}$ --- available cash: {7}, SUM(CRTDR): {8}", strategy.Signals[0].Bars.Info.Name, accountEquity, Portfolio.InvestedCapital, weightedCRTDR, cashToInvest, strategy.EntryContracts, possibleEntryPrice, availableCash, sumCRTDR);
                 if (strategy.EntryContracts > 0)
                 {
                     strategy.PortfolioData[PortfolioDataKeys.NumberOfShares] = strategy.EntryContracts;
