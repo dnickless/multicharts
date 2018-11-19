@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
 using PowerLanguage.Function;
-using ATCenterProxy.interop;
 
 namespace PowerLanguage.Strategy
 {
@@ -79,8 +76,6 @@ namespace PowerLanguage.Strategy
         private XAverageThatWorks xAverageShort;
         private bool doReinvestment = false;
 
-        private DateTime lastOrderGenerated;
-
         string symbolName;
 
         protected override void Create()
@@ -123,16 +118,14 @@ namespace PowerLanguage.Strategy
         private DateTime _lastLogEntry = DateTime.MinValue;
         private bool _throttledLoggingActive = false;
         private string _lastLogMessage;
-        private bool _forceMailLog;
-        
+
         private void UpdateLogThrottling()
         {
             var now = DateTime.Now;
-            _forceMailLog = Bars.Status == EBarState.Close;
-            if(_lastLogEntry <= now || _forceMailLog)
+            if (_lastLogEntry <= now)
             {
                 _throttledLoggingActive = true;
-                double frequency = now.TimeOfDay > new TimeSpan(15, 57, 00) && now.TimeOfDay < new TimeSpan(16, 00, 00) ? 0.25 : 5;
+                double frequency = now.TimeOfDay > new TimeSpan(15, 57, 00) && now.TimeOfDay < new TimeSpan(16, 00, 00) ? 0.25 : 60;
                 _lastLogEntry = now.AddMinutes(frequency);
             }
             else
@@ -140,15 +133,15 @@ namespace PowerLanguage.Strategy
                 _throttledLoggingActive = false;
             }
         }
-        
+
         private void LogThrottled(string message, params object[] parameters)
         {
-            if(_throttledLoggingActive)
+            if (_throttledLoggingActive)
             {
                 Log(message, parameters);
             }
         }
-        
+
         private void Log(string message, params object[] parameters)
         {
             Log(false, message, parameters);
@@ -168,23 +161,23 @@ namespace PowerLanguage.Strategy
                     try
                     {
                         var logMessage = string.Format("{0} - {1}: {2}", Bars.TimeValue, Bars.Info.Name, string.Format(message, parameters));
-                        if(string.Equals(message, _lastLogMessage))
+                        if (string.Equals(message, _lastLogMessage))
                         {
                             return;
                         }
-                        
+
                         _lastLogMessage = logMessage;
-                        
+
                         var fullLogString = string.Format("{0} - {1}", DateTime.Now, logMessage);
-                        
+
                         //Output.WriteLine(fullLogString);
                         _logStringBuilder.AppendLine(fullLogString);
-                        
-                        if(_logStringBuilder.Length >= 1000)
+
+                        if (_logStringBuilder.Length >= 1000)
                         {
                             DumpFileLog();
                         }
-                        
+
                         if (sendMail)
                         {
                             emailLogMessages[logMessage] = DateTime.Now;
@@ -203,7 +196,7 @@ namespace PowerLanguage.Strategy
             File.AppendAllText(@"c:\temp\logs\" + Bars.Info.Name + ".txt", _logStringBuilder.ToString());
             _logStringBuilder.Clear();
         }
-        
+
         private void DumpMailLog()
         {
             if (emailLogMessages.Count != 0)
@@ -222,6 +215,8 @@ namespace PowerLanguage.Strategy
 
         protected override void CalcBar()
         {
+            CurSpecOrdersMode = ESpecOrdersMode.PerPosition;
+            
             if (!Environment.IsRealTimeCalc) // There is no need to calculate on historical data, that is why backtesting is ignored
             {
                 // As soon as backtesting is finished, the signal gets immediately calculated by the timer.
@@ -230,8 +225,12 @@ namespace PowerLanguage.Strategy
                 return;
             }
 
+            // This method will be called over and over again because of the RecalcLastBarAfter setting
+            // Since we do not want to get the same logs all the time we have a throttling in place
+            // which will allow only certain calls to really log their output.
+            // Depending on the time of the day we log more of less often.
             UpdateLogThrottling();
-            
+
             var high = Bars.HighValue;
             var low = Bars.LowValue;
             var close = Bars.CloseValue;
@@ -252,7 +251,7 @@ namespace PowerLanguage.Strategy
             MyPortfolioData[PortfolioDataKeys.IWantToBuy] = false;
             MyPortfolioData[PortfolioDataKeys.IWantToSell] = false;
             MyPortfolioData[PortfolioDataKeys.CRTDR] = crtdr;
-            
+
             LogThrottled("Reason: {0}, Status: {1}, Open: {2}, High: {3}, Low: {4}, Close: {5}, RSI: {6}, CRTDR: {7}, xAvgLong: {8}, xAvgShort: {9}", Environment.CalcReason, Bars.Status, Bars.OpenValue, Bars.HighValue, Bars.LowValue, Bars.CloseValue, rsi, crtdr, xAverageLongValue, xAverageShortValue);
 
             if (StrategyInfo.MarketPosition == 0)
@@ -277,10 +276,8 @@ namespace PowerLanguage.Strategy
             else if (StrategyInfo.MarketPosition > 0)
             {
                 // WE ARE LONG
-                GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
-                GeneratePercentTrailing(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * 0.01, 50);
-
                 //var barsSinceEntry = Bars.CurrentBar - CurrentPosition.OpenTrades[0].EntryOrder.BarNumber;
+                // BarsSinceEntry() doesn't work upon the restart of a trading session in which case BarsSinceEntry() will be zero no matter when the deals were actually opened
                 var barsSinceEntry = Math.Min(1, this.BarsSinceEntry());
                 var openProfit = CurrentPosition.OpenProfit;
                 var signalUp = GetSignalUp(crtdr, rsi, trend);
@@ -344,13 +341,12 @@ namespace PowerLanguage.Strategy
                 case StrategyEvents.GenerateOrders_Long:
                     int numberOfShares = Convert.ToInt32(MyPortfolioData[PortfolioDataKeys.NumberOfShares]);
                     buyOrder.Send(numberOfShares);
-                    lastOrderGenerated = DateTime.Now.Date;
                     LogThrottled("Generated Buy: {0}#", numberOfShares);
+                    GenerateOrAdjustStopLosses();
                     break;
 
                 case StrategyEvents.GenerateOrders_Short:
                     sellOrder.Send();
-                    lastOrderGenerated = DateTime.Now.Date;
                     LogThrottled("Generated Sell.");
                     break;
 
@@ -362,9 +358,8 @@ namespace PowerLanguage.Strategy
             // During calculation at the bar close, global variables, used to exchange messages between the current signal and MM-signal should be reset
             if (Bars.Status == EBarState.Close)
             {
-                Log(lastOrderGenerated == DateTime.Now.Date, "Close event received."); // only send email output if trade has been sent on this day
+                Log("Close event received."); // only send email output if trade has been sent on this day
                 DumpFileLog();
-                DumpMailLog();
 
                 MyPortfolioData[PortfolioDataKeys.CRTDR] = 1.0;
                 MyPortfolioData[PortfolioDataKeys.MoneyManagementCommand] = StrategyEvents.None;
@@ -375,6 +370,35 @@ namespace PowerLanguage.Strategy
             }
         }
 
+        private void GenerateOrAdjustStopLosses()
+        {
+            if (CurSpecOrdersMode != ESpecOrdersMode.PerPosition) {
+                throw new Exception("Incorrect CurSpecOrdersMode. ESpecOrdersMode.PerPosition required.");
+            }
+            
+            double amount = StopLossLevel / (Bars.Point * Bars.Info.MinMove);
+            amount *= (StrategyInfo.MarketPosition > 0) ? StrategyInfo.AvgEntryPrice : Bars.Close[0];
+            
+            // Inserted as per Svetlana's request: https://www.multicharts.com/discussion/viewtopic.php?p=130893&sid=428630f2f75e47b752f6eb1a6577e158#p130893
+            if (Environment.IsAutoTradingMode && Bars.LastBarOnChart)
+                LogThrottled("sysDT= {0}, Name= {1}, barDT= {2}, BStatus= {3}, MP= {4}, MPBS= {5}, EP= {6}, EPBS= {7}, SL @ {8}",
+                            DateTime.Now.ToString("MM/dd/yy hh:mm:ss.fff"),
+                            Bars.Info.Name,
+                            Bars.BarUpdateTime.ToString("MM/dd/yy hh:mm:ss.fff"),
+                            Bars.Status,
+                            StrategyInfo.MarketPosition,
+                            StrategyInfo.MarketPositionAtBrokerForTheStrategy,
+                            StrategyInfo.AvgEntryPrice,
+                            StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy,
+                            amount);
+                    
+            LogThrottled("Generating stop loss @ {0}", amount);
+            GenerateStopLossPt(amount);
+            
+            LogThrottled("Generating stop loss starting at {0}", amount);
+            GeneratePercentTrailingPt(amount, 50);
+        }
+        
         private double GetRsiSellLevel(Trend trend)
         {
             return trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat);
@@ -387,16 +411,19 @@ namespace PowerLanguage.Strategy
             Flat = 0
         }
 
-        private static Trend GetTrend(double close, double xAverageLongValue, double xAverageShortValue)
+        private Trend GetTrend(double close, double xAverageLongValue, double xAverageShortValue)
         {
             if (close > xAverageLongValue && xAverageLongValue < xAverageShortValue)
             {
+                LogThrottled("Up trend detected because close {0} > xAverageLongValue {1} && xAverageLongValue {1} < xAverageShortValue {2}", close, xAverageLongValue, xAverageShortValue);
                 return Trend.Up;
             }
             if (xAverageLongValue > xAverageShortValue && xAverageShortValue > close)
             {
+                LogThrottled("Down trend detected because xAverageLongValue {0} > xAverageShortValue {1} && xAverageShortValue {1} < close {2}", xAverageLongValue, xAverageShortValue, close);
                 return Trend.Down;
             }
+            LogThrottled("Flat trend detected with close {0}, xAverageLongValue {1}, xAverageShortValue {2}", close, xAverageLongValue, xAverageShortValue);
             return Trend.Flat;
         }
 
@@ -404,17 +431,27 @@ namespace PowerLanguage.Strategy
         {
             if (trend == Trend.Up)
             {
-                if (crtdr * 100 + rsi <= LongLimitUp) return true;
+                if (crtdr * 100 + rsi <= LongLimitUp) {
+                    LogThrottled("Signal up because crtdr {0} * 100 + rsi {1} <= LongLimitUp {2}", crtdr, rsi, LongLimitUp);
+                    return true;
+                }
             }
             else if (trend == Trend.Down)
             {
-                if (crtdr * 100 + rsi <= LongLimitDown) return true;
+                if (crtdr * 100 + rsi <= LongLimitDown) {
+                    LogThrottled("Signal up because crtdr {0} * 100 + rsi {1} <= LongLimitDown {2}", crtdr, rsi, LongLimitDown);
+                    return true;
+                }
             }
             else
             {
-                if (crtdr * 100 + rsi <= LongLimitFlat) return true;
+                if (crtdr * 100 + rsi <= LongLimitFlat) {
+                    LogThrottled("Signal up because crtdr {0} * 100 + rsi {1} <= LongLimitFlat {2}", crtdr, rsi, LongLimitFlat);
+                    return true;
+                }
             }
 
+            LogThrottled("No signal up because with crtdr {0}, rsi {1}, LongLimitUp {2}, LongLimitDown {3}, LongLimitFlat {4}", crtdr, rsi, LongLimitUp, LongLimitDown, LongLimitFlat);
             return false;
         }
 
@@ -436,17 +473,23 @@ namespace PowerLanguage.Strategy
         protected override void OnOrderRejected(EOrderAction action, OrderCategory category, int quantity, double stopPrice, double limitPrice)
         {
             LogAndMail("Order rejected: {0} {1} ({2} @ {3}/{4}).", action, quantity, category, stopPrice, limitPrice);
-			DumpFileLog();
-			DumpMailLog();
+            DumpFileLog();
+            DumpMailLog();
             ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));                                            // If there were no instructions from MM-signal, we will keep waiting for them.
         }
 
         protected override void OnBrokerStategyOrderFilled(bool isBuy, int quantity, double avgFillPrice)
         {
-            double pAndL = quantity * (avgFillPrice - StrategyInfo.AvgEntryPriceAtBroker);
-            LogAndMail("Order filled: {0} {1} @ avg. {2} (==> {3}). MarketPositionAtBroker={4}, AvgEntryPriceAtBroker={5}", isBuy ? "BUY" : "SELL", quantity, avgFillPrice, isBuy ? "Investing " + quantity * avgFillPrice : ("P/L " + pAndL + (pAndL > 0 ? " - yeah, baby!" : " - ouch!")), StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker);
-			DumpFileLog();
-			DumpMailLog();
+            double pAndL = double.NaN;
+            double pAndLPercentage = double.NaN;
+            if(StrategyInfo.AvgEntryPriceAtBroker == 0)
+            {
+                pAndL = quantity * (avgFillPrice - StrategyInfo.AvgEntryPriceAtBroker);
+                pAndLPercentage = avgFillPrice / StrategyInfo.AvgEntryPriceAtBroker * 100 - 100;
+            }
+            LogAndMail("Order filled: {0} {1} @ avg. {2} (==> {3}). MarketPositionAtBroker={4}, AvgEntryPriceAtBroker={5}", isBuy ? "BUY" : "SELL", quantity, avgFillPrice, isBuy ? "Investing " + quantity * avgFillPrice : ("P/L " + pAndL + " (" + pAndLPercentage + "%)" + (pAndL > 0 ? " - yeah, baby!" : " - ouch!")), StrategyInfo.MarketPositionAtBroker, StrategyInfo.AvgEntryPriceAtBroker);
+            DumpFileLog();
+            DumpMailLog();
             ExecControl.RecalcLastBarAfter(TimeSpan.FromSeconds(recalcFrequency));                                            // If there were no instructions from MM-signal, we will keep waiting for them.
         }
 

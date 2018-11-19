@@ -94,7 +94,6 @@ namespace PowerLanguage.Strategy
         {
             if (!Environment.Optimizing)
             {
-                Output.WriteLine("Dumping log for {0}", Bars.Info.Name);
                 DumpLog();
             }
         }
@@ -109,7 +108,7 @@ namespace PowerLanguage.Strategy
                 {
                     var str = string.Format("{0} - {1}: {2}", Bars.TimeValue, Bars.Info.Name, string.Format(message, parameters));
 
-                    Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
+                    //Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
 
                     logMessages[str] = DateTime.Now;
 
@@ -140,6 +139,8 @@ namespace PowerLanguage.Strategy
 
         protected override void CalcBar()
         {
+			CurSpecOrdersMode = ESpecOrdersMode.PerPosition;
+			
             MyPortfolioData[PortfolioDataKeys.CRTDR] = 1.0;
             MyPortfolioData[PortfolioDataKeys.MoneyManagementCommand] = StrategyEvents.None;
             MyPortfolioData[PortfolioDataKeys.IWantToBuy] = false;
@@ -177,14 +178,13 @@ namespace PowerLanguage.Strategy
                     var numberOfShares = Convert.ToInt32((InitialCapital + (doReinvestment ? Portfolio.NetProfit : 0.0)) / Bars.CloseValue);
                     MyPortfolioData[PortfolioDataKeys.IWantToBuy] = true;
                     buyOrder.Send(numberOfShares);
+					GenerateOrAdjustStopLosses();
                     Log("Generated Buy: {0}# - may be overwritten by MMS", numberOfShares);
                 }
             }
             else if (StrategyInfo.MarketPosition > 0)
             {
                 // WE ARE LONG
-                GenerateStopLoss(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * StopLossLevel);
-                GeneratePercentTrailing(StrategyInfo.AvgEntryPrice * Math.Abs(StrategyInfo.MarketPosition) * 0.01, 50);
                 
                 var barsSinceEntry = Math.Min(1, this.BarsSinceEntry());
                 var openProfit = CurrentPosition.OpenProfit;
@@ -225,6 +225,35 @@ namespace PowerLanguage.Strategy
             }
         }
 
+		private void GenerateOrAdjustStopLosses()
+		{
+			if (CurSpecOrdersMode != ESpecOrdersMode.PerPosition) {
+				throw new Exception("Incorrect CurSpecOrdersMode. ESpecOrdersMode.PerPosition required.");
+			}
+			
+            double amount = StopLossLevel / (Bars.Point * Bars.Info.MinMove);
+            amount *= (StrategyInfo.MarketPosition > 0) ? StrategyInfo.AvgEntryPrice : Bars.Close[0];
+			
+			// Inserted as per Svetlana's request: https://www.multicharts.com/discussion/viewtopic.php?p=130893&sid=428630f2f75e47b752f6eb1a6577e158#p130893
+			if (Environment.IsAutoTradingMode && Bars.LastBarOnChart)
+                Log("sysDT= {0}, Name= {1}, barDT= {2}, BStatus= {3}, MP= {4}, MPBS= {5}, EP= {6}, EPBS= {7}, SL @ {8}",
+                            DateTime.Now.ToString("MM/dd/yy hh:mm:ss.fff"),
+                            Bars.Info.Name,
+                            Bars.BarUpdateTime.ToString("MM/dd/yy hh:mm:ss.fff"),
+                            Bars.Status,
+                            StrategyInfo.MarketPosition,
+                            StrategyInfo.MarketPositionAtBrokerForTheStrategy,
+                            StrategyInfo.AvgEntryPrice,
+                            StrategyInfo.AvgEntryPriceAtBrokerForTheStrategy,
+                            amount);
+					
+            Log("Generating stop loss @ {0}", amount);
+            GenerateStopLossPt(amount);
+			
+            Log("Generating stop loss starting at {0}", amount);
+            GeneratePercentTrailingPt(amount, 50);
+		}
+		
         private double GetRsiSellLevel(Trend trend)
         {
             return trend == Trend.Down ? RsiSellLevelDown : (trend == Trend.Up ? RsiSellLevelUp : RsiSellLevelFlat);
