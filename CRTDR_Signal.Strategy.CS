@@ -482,7 +482,7 @@ namespace PowerLanguage.Strategy
         {
             double pAndL = double.NaN;
             double pAndLPercentage = double.NaN;
-            if(StrategyInfo.AvgEntryPriceAtBroker == 0)
+            if(StrategyInfo.AvgEntryPriceAtBroker != 0)
             {
                 pAndL = quantity * (avgFillPrice - StrategyInfo.AvgEntryPriceAtBroker);
                 pAndLPercentage = avgFillPrice / StrategyInfo.AvgEntryPriceAtBroker * 100 - 100;
