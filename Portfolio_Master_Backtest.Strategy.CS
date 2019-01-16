@@ -43,7 +43,6 @@ namespace PowerLanguage.Strategy
         {
             if (!Environment.Optimizing)
             {
-                Output.WriteLine("Dumping Money Management Signal log");
                 DumpLog();
             }
         }
@@ -61,7 +60,7 @@ namespace PowerLanguage.Strategy
                 {
                     var str = string.Format("{0}: {1}", Bars.TimeValue, string.Format(message, parameters));
 
-                    Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
+                    //Output.WriteLine(string.Format("{0} - {1}", DateTime.Now, str));
 
                     logMessages[str] = DateTime.Now;
 
@@ -183,20 +182,32 @@ namespace PowerLanguage.Strategy
             double availableCash;
             if (DoReinvestment)
             {
-                availableCash = Math.Min(accountEquity, Math.Max(0, accountEquity + changeInMoney - Portfolio.InvestedCapital));
+                availableCash = Math.Min(accountEquity, Math.Max(0, accountEquity + changeInMoney - Portfolio.InvestedCapital /* always zero in backtesting */));
             }
             else
             {
                 // do not reinvest potential profits, cap @ InitialCapital
-                availableCash = Math.Max(0, Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital));
+				
+				
+				// STATUS: Money Mgmt. not good, reinvesting partially.
+                
+				
+				availableCash = Math.Max(0, Math.Min(InitialCapital, InitialCapital + changeInMoney - Portfolio.InvestedCapital /* always zero in backtesting */));
             }
 
             double sumInvested = 0.0;
-            foreach (var strategy in listOfStrategiesWithBuyOrders)
+			
+			double avgCRTDR = 0;
+			if(listOfStrategiesWithBuyOrders.Count != 0)
+			{
+				avgCRTDR = sumCRTDR / (listOfStrategiesWithBuyOrders.Count);
+			}
+			
+			foreach (var strategy in listOfStrategiesWithBuyOrders)
             {
                 var crtdr = (double)strategy.PortfolioData[PortfolioDataKeys.CRTDR];
-                double weightedCRTDR = sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : ((sumCRTDR - crtdr) / sumCRTDR);
-                double cashToInvest = listOfStrategiesWithBuyOrders.Count == 1 ? availableCash : (availableCash / (listOfStrategiesWithBuyOrders.Count - 1) * weightedCRTDR);
+				double weightedCRTDR = sumCRTDR == 0.0 ? 1.0 / listOfStrategiesWithBuyOrders.Count : (avgCRTDR + crtdr) / sumCRTDR / 2.0;
+                double cashToInvest = listOfStrategiesWithBuyOrders.Count == 1 ? availableCash : (availableCash * weightedCRTDR);
                 // limit to 33% max. exposure per deal
                 cashToInvest = Math.Min(cashToInvest, (accountEquity + changeInMoney) / 3.0);
                 sumInvested += cashToInvest;
