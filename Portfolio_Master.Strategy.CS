@@ -188,6 +188,9 @@ namespace PowerLanguage.Strategy
                 return;
             }
 
+            // this is needed for the accounts list to be up-to-date and populated with the right values
+			TradeManager.ProcessEvents();
+			
             var listOfStrategiesWithBuyOrders = new List<IPortfolioStrategy>();
 
             double sumCRTDR = 0.0;
@@ -251,7 +254,6 @@ namespace PowerLanguage.Strategy
             double accountEquity = 0;
             if (Environment.IsAutoTradingMode)
             {
-                TradeManager.ProcessEvents();
                 foreach (var account in TradeManager.TradingData.Accounts.Items)
                 {
                     accountEquity += account.Equity ?? 0.0;
@@ -266,7 +268,9 @@ namespace PowerLanguage.Strategy
             }
             else
             {
-                accountEquity = InitialCapital + Portfolio.NetProfit;
+                //accountEquity = InitialCapital + Portfolio.NetProfit;
+                accountEquity = 70000;
+                Log("UTTERLY UNEXPECTED: Environment.IsAutoTradingMode is FALSE?!");
             }
 
             Log("Assumed account equity is: " + accountEquity);
